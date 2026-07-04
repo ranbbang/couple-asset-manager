@@ -1,0 +1,60 @@
+{% extends "shell.html" %}
+{% block title %}목표 · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">목표 · GOALS</span>
+    <h1>공동 목표 🎯</h1>
+    <div class="sub">카테고리·자산을 연동하면 현재 금액이 자동으로 채워집니다.</div>
+  </div>
+  <a href="{{ url_for('goals.create') }}" class="btn btn-primary">＋ 목표 추가</a>
+</div>
+
+{% if goals %}
+  <div class="grid cols-2">
+    {% for goal in goals %}
+      {% set v = views.get(goal.id) %}
+      <div class="card goal-card">
+        <div class="top">
+          <h2 style="margin:0;">{{ goal.name }}
+            {% if v and v.linked %}<span class="pill" style="margin-left:6px;">🔗 자동 연동</span>{% endif %}
+          </h2>
+          <span class="pct">{{ v.pct if v else 0 }}%</span>
+        </div>
+        <div class="progress"><span style="width:{{ v.pct if v else 0 }}%;"></span></div>
+        <div class="goal-meta">
+          <span>현재 <b>{{ (v.current if v else 0) | won }}</b></span>
+          <span>목표 <b>{{ goal.target_amount | won }}</b></span>
+        </div>
+        <div class="goal-meta">
+          <span>{{ (v.current if v else 0) | won_short }} / {{ goal.target_amount | won_short }}</span>
+        </div>
+        {% if v and v.linked %}
+          <div class="goal-meta" style="flex-wrap:wrap; gap:6px;">
+            {% for cid in goal.category_id_list %}
+              {% for c in couple_categories if c.id == cid %}
+                <span class="pill">{{ c.icon }} {{ c.name }}</span>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
+        <div class="row-actions" style="margin-top:14px;">
+          <a href="{{ url_for('goals.edit', goal_id=goal.id) }}" class="btn btn-ghost btn-sm">수정</a>
+          <form method="post" action="{{ url_for('goals.delete', goal_id=goal.id) }}"
+                onsubmit="return confirm('‘{{ goal.name }}’ 목표를 삭제할까요?');" style="display:inline;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    <div class="big">🎯</div>
+    <p>아직 목표가 없어요.<br>전세 보증금, 여행, 비상금 등 함께 모을 목표를 추가해 보세요.</p>
+    <a href="{{ url_for('goals.create') }}" class="btn btn-primary">＋ 첫 목표 추가</a>
+  </div>
+{% endif %}
+{% endblock %}

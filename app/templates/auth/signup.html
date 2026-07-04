@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_formhelpers.html" import render_field %}
+{% block title %}회원가입 · {{ APP_NAME }}{% endblock %}
+
+{% block body %}
+<div class="center-wrap">
+  <div class="auth-card card">
+    <div class="brand"><span class="logo">💜</span><span>{{ APP_NAME }}</span></div>
+    <p style="text-align:center; color:var(--ink-soft); margin-top:-4px;">계정을 만들고 파트너와 연결하세요</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ render_field(form.display_name, autofocus=true, placeholder="이름 또는 애칭") }}
+      {{ render_field(form.email, type="email", placeholder="you@example.com") }}
+      {{ render_field(form.password, placeholder="8자 이상") }}
+      {{ render_field(form.confirm, placeholder="비밀번호 다시 입력") }}
+      {{ form.submit(class="btn btn-primary btn-block") }}
+    </form>
+
+    <div class="auth-switch">
+      이미 계정이 있으신가요? <a href="{{ url_for('auth.login') }}">로그인</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

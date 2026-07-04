@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_formhelpers.html" import render_field %}
+{% block title %}로그인 · {{ APP_NAME }}{% endblock %}
+
+{% block body %}
+<div class="center-wrap">
+  <div class="auth-card card">
+    <div class="brand"><span class="logo">💜</span><span>{{ APP_NAME }}</span></div>
+    <p style="text-align:center; color:var(--ink-soft); margin-top:-4px;">둘이 함께 보는 우리집 자산</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+      {{ render_field(form.email, autofocus=true, type="email", placeholder="you@example.com") }}
+      {{ render_field(form.password, placeholder="••••••••") }}
+      {{ form.submit(class="btn btn-primary btn-block") }}
+    </form>
+
+    <div class="auth-switch">
+      처음이신가요? <a href="{{ url_for('auth.signup') }}">회원가입</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

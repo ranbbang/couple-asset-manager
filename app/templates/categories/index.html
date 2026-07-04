@@ -1,0 +1,67 @@
+{% extends "shell.html" %}
+{% block title %}카테고리 관리 · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">설정 · CATEGORIES</span>
+    <h1>카테고리 관리 🏷️</h1>
+    <div class="sub">자산 카테고리를 추가·수정·삭제하고 순서를 바꿀 수 있어요.</div>
+  </div>
+  <a href="{{ url_for('categories.create') }}" class="btn btn-primary">＋ 카테고리 추가</a>
+</div>
+
+<div class="card">
+  {% for cat in categories %}
+    <div class="list-row">
+      <button class="icon-btn" form="up-{{ cat.id }}" {{ 'disabled' if loop.first }} title="위로">▲</button>
+      <button class="icon-btn" form="down-{{ cat.id }}" {{ 'disabled' if loop.last }} title="아래로">▼</button>
+      <span class="swatch" style="background:{{ cat.color }}1f;">{{ cat.icon }}</span>
+      <div>
+        <div class="name">{{ cat.name }}
+          {% if cat.is_liability %}<span class="tag-liability">· 부채</span>{% endif %}
+        </div>
+        <div class="where">
+          {% if cat.is_liability %}순자산에서 차감{% else %}리포트 그룹: {{ {'cash':'현금성 자산','investment':'투자 자산','safe':'노후·안전 자산','personal':'개인 자산'}.get(cat.report_group, '-') }}{% endif %}
+          · 자산 {{ cat.asset_count }}개
+        </div>
+      </div>
+      <span class="spacer"></span>
+      <div class="row-actions" style="align-items:center;">
+        <a href="{{ url_for('categories.edit', category_id=cat.id) }}" class="btn btn-ghost btn-sm">수정</a>
+        <form method="post" action="{{ url_for('categories.delete', category_id=cat.id) }}"
+              style="display:flex; gap:6px; align-items:center;"
+              onsubmit="return confirm('‘{{ cat.name }}’ 카테고리를 삭제할까요?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% if cat.asset_count > 0 %}
+            <select name="reassign_to" required class="reassign" title="자산을 옮길 카테고리">
+              <option value="" disabled selected>→ 자산 이동 대상</option>
+              {% for other in categories if other.id != cat.id %}
+                <option value="{{ other.id }}">{{ other.icon }} {{ other.name }}</option>
+              {% endfor %}
+            </select>
+          {% endif %}
+          <button type="submit" class="btn btn-danger btn-sm" {{ 'disabled' if categories|length <= 1 }}>삭제</button>
+        </form>
+      </div>
+    </div>
+
+    {# hidden move forms referenced by the ▲▼ buttons above #}
+    <form id="up-{{ cat.id }}" method="post" action="{{ url_for('categories.move', category_id=cat.id) }}" style="display:none;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="dir" value="up">
+    </form>
+    <form id="down-{{ cat.id }}" method="post" action="{{ url_for('categories.move', category_id=cat.id) }}" style="display:none;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="dir" value="down">
+    </form>
+  {% endfor %}
+</div>
+
+<p style="color:var(--ink-faint); font-size:0.84rem; margin-top:14px;">
+  💡 카테고리를 삭제할 때 그 안에 자산이 있으면, 옮길 카테고리를 먼저 선택해야 해요.
+  부채로 지정한 카테고리는 순자산에서 차감됩니다.
+</p>
+{% endblock %}
+
+{% block scripts %}
+<style>.reassign { padding: 7px 10px; max-width: 200px; }</style>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_formhelpers.html" import render_field %}
+{% block title %}가구 설정 · {{ APP_NAME }}{% endblock %}
+
+{% block body %}
+<div class="center-wrap">
+  <div class="auth-card card" style="max-width:460px;">
+    <div class="brand"><span class="logo">💜</span><span>가구 설정</span></div>
+    <p style="text-align:center; color:var(--ink-soft); margin-top:-4px;">
+      {{ current_user.display_name }}님, 환영해요! 새 가구를 만들거나 파트너의 코드로 합류하세요.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('couple.create') }}" novalidate>
+      {{ create_form.hidden_tag() }}
+      {{ render_field(create_form.name) }}
+      {{ create_form.submit(class="btn btn-primary btn-block") }}
+    </form>
+
+    <div class="divider">또는</div>
+
+    <form method="post" action="{{ url_for('couple.join') }}" novalidate>
+      {{ join_form.hidden_tag() }}
+      {{ render_field(join_form.invite_code) }}
+      {{ join_form.submit(class="btn btn-ghost btn-block") }}
+    </form>
+
+    <div class="auth-switch" style="margin-top:18px;">
+      <a href="{{ url_for('auth.logout') }}">로그아웃</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

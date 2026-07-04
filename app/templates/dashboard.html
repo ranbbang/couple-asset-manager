@@ -1,0 +1,133 @@
+{% extends "shell.html" %}
+{% block title %}대시보드 · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">대시보드 · OVERVIEW</span>
+    <h1>{{ couple.name }} 💜</h1>
+    <div class="sub">
+      {% if partner %}{{ current_user.display_name }} &amp; {{ partner.display_name }}님의 공동 자산 현황
+      {% else %}{{ current_user.display_name }}님 · <a href="{{ url_for('couple.invite') }}" style="color:var(--lilac);font-weight:700;">파트너를 초대해 보세요</a>{% endif %}
+    </div>
+  </div>
+  <a href="{{ url_for('assets.create') }}" class="btn btn-primary">＋ 자산 추가</a>
+</div>
+
+{# ---- headline stats ---- #}
+<div class="grid cols-4" style="margin-bottom:22px;">
+  <div class="card stat assets">
+    <div class="chip">📊</div>
+    <div class="label">총 자산</div>
+    <div class="value pos" data-countup="{{ summary.total_assets }}" data-prefix="₩">{{ summary.total_assets | won }}</div>
+    <div class="amt-sub">{{ summary.total_assets | won_short }}</div>
+  </div>
+  <div class="card stat debts">
+    <div class="chip">💢</div>
+    <div class="label">총 부채</div>
+    <div class="value neg" data-countup="{{ summary.total_liabilities }}" data-prefix="₩">{{ summary.total_liabilities | won }}</div>
+    <div class="amt-sub">{{ summary.total_liabilities | won_short }}</div>
+  </div>
+  <div class="card stat net">
+    <div class="chip">💜</div>
+    <div class="label">순자산 (Net Worth)</div>
+    <div class="value {{ 'pos' if summary.net_worth >= 0 else 'neg' }}" data-countup="{{ summary.net_worth }}" data-prefix="₩">{{ summary.net_worth | won }}</div>
+    <div class="amt-sub">{{ summary.net_worth | won_short }}</div>
+  </div>
+  <div class="card stat net">
+    <div class="chip">🏡</div>
+    <div class="label">부동산 제외 순자산</div>
+    <div class="value {{ 'pos' if summary.net_worth_excl_re >= 0 else 'neg' }}" data-countup="{{ summary.net_worth_excl_re }}" data-prefix="₩">{{ summary.net_worth_excl_re | won }}</div>
+    <div class="amt-sub">{{ summary.net_worth_excl_re | won_short }} · 부동산 {{ summary.real_estate | won_short }}</div>
+  </div>
+</div>
+
+<div class="grid cols-2">
+  {# ---- category breakdown ---- #}
+  <div class="card">
+    <h2>카테고리별 구성</h2>
+    {% if summary.breakdown %}
+      {% for row in summary.breakdown %}
+        <div class="breakdown-row">
+          <div class="ic" style="background:{{ row.color }}1f;">{{ row.icon }}</div>
+          <div class="meta">
+            <div class="name">{{ row.category }}
+              {% if row.is_liability %}<span class="tag-liability">· 부채</span>
+              {% elif row.share %}<span class="share-tag" style="color:{{ row.color }};">{{ row.share }}%</span>{% endif %}
+            </div>
+            {% if not row.is_liability %}
+              <div class="bar"><span style="width:{{ row.share }}%; background:{{ row.color }};"></span></div>
+            {% endif %}
+          </div>
+          <div class="amount" style="{{ 'color:var(--rose);' if row.is_liability }}">
+            {{ '−' if row.is_liability }}{{ row.amount | won }}
+            <div class="amt-sub">{{ row.amount | won_short }}</div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty">
+        <div class="big">🌱</div>
+        <p>아직 등록된 자산이 없어요.<br>첫 자산을 추가해 보세요.</p>
+        <a href="{{ url_for('assets.create') }}" class="btn btn-primary">＋ 자산 추가</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:18px;">
+    {# ---- goals preview ---- #}
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">공동 목표 🎯</h2>
+        <a href="{{ url_for('goals.index') }}" class="pill">전체 보기</a>
+      </div>
+      {% if goals %}
+        {% for goal in goals[:3] %}
+          {% set v = goal_views.get(goal.id) %}
+          <div style="margin-top:16px;">
+            <div class="top">
+              <span style="font-weight:700;">{{ goal.name }}
+                {% if v and v.linked %}<span class="pill" style="margin-left:4px;">🔗 자동</span>{% endif %}
+              </span>
+              <span class="pct">{{ v.pct if v else 0 }}%</span>
+            </div>
+            <div class="progress"><span style="width:{{ v.pct if v else 0 }}%;"></span></div>
+            <div class="goal-meta">
+              <span><b>{{ (v.current if v else 0) | won }}</b> / {{ goal.target_amount | won }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty" style="padding:28px 10px;">
+          <div class="big">🎯</div>
+          <p>둘이 함께 이룰 목표를 세워보세요.</p>
+          <a href="{{ url_for('goals.create') }}" class="btn btn-ghost btn-sm">＋ 목표 추가</a>
+        </div>
+      {% endif %}
+    </div>
+
+    {# ---- recent activity ---- #}
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0;">최근 활동 📜</h2>
+        <a href="{{ url_for('main.activity') }}" class="pill">전체 보기</a>
+      </div>
+      {% if recent %}
+        <div style="margin-top:8px;">
+          {% for entry in recent %}
+            <div class="feed-row">
+              <div class="ic">{{ entry.icon }}</div>
+              <div style="flex:1;">
+                <div>{{ entry.action }}</div>
+                <time class="when" data-ts="{{ entry.created_at.isoformat() }}Z">{{ entry.created_at.strftime('%m/%d %H:%M') }}</time>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color:var(--ink-soft); margin-top:10px;">활동 기록이 여기에 표시됩니다.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

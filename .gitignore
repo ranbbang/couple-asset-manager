@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Instance / DB / secrets
+instance/
+*.db
+*.sqlite3
+.env
+backups/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# OMC / Claude tooling (local machine state, session logs, project memory)
+.claude/
+.omc/
+
+# Dev-only reference assets (not part of the shipped app)
+capture.jpg

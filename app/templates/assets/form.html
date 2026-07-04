@@ -1,0 +1,73 @@
+{% extends "shell.html" %}
+{% from "_formhelpers.html" import render_field %}
+{% block title %}{{ '자산 수정' if mode == 'edit' else '자산 추가' }} · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1>{{ '자산 수정 ✏️' if mode == 'edit' else '자산 추가 ＋' }}</h1>
+    <div class="sub">한 계좌에 현금(원화/달러)과 주식 종목을 함께 넣을 수 있어요. <a href="{{ url_for('categories.index') }}" style="color:var(--accent);font-weight:600;">카테고리 관리</a></div>
+  </div>
+</div>
+
+<div class="card" style="max-width:680px;">
+  <form method="post" novalidate id="asset-form">
+    {{ form.hidden_tag() }}
+    {{ render_field(form.name, autofocus=true) }}
+    <div class="form-row">
+      {{ render_field(form.category) }}
+      {{ render_field(form.owner) }}
+    </div>
+
+    {# ===== holdings editor ===== #}
+    <div class="field">
+      <label>보유 항목 (현금 · 주식)</label>
+      <div id="holdings-list"></div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button type="button" class="btn btn-ghost btn-sm" data-add="cash">＋ 현금</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-add="stock">＋ 주식 종목</button>
+      </div>
+      <p class="rate-note" style="margin-top:8px;">
+        주식은 티커(예: <b>AAPL</b>, <b>005930.KS</b>, <b>BTC-USD</b>)와 수량을 입력하면 저장 시 현재가를 불러옵니다.
+      </p>
+    </div>
+
+    {{ render_field(form.institution) }}
+    {{ render_field(form.notes) }}
+    <label class="check-row">
+      {{ form.exclude_from_stats() }}
+      <span>{{ form.exclude_from_stats.label.text }}</span>
+    </label>
+    <div style="display:flex; gap:10px; margin-top:8px;">
+      {{ form.submit(class="btn btn-primary") }}
+      <a href="{{ url_for('assets.index') }}" class="btn btn-ghost">취소</a>
+    </div>
+  </form>
+</div>
+
+{# row template (cloned by JS). All six inputs always submit for index alignment. #}
+<template id="holding-row-tpl">
+  <div class="holding-row">
+    <select name="holding_kind" class="h-kind">
+      <option value="cash">💵 현금</option>
+      <option value="stock">📈 주식</option>
+    </select>
+    <select name="holding_currency" class="h-cur">
+      <option value="KRW">₩ KRW</option>
+      <option value="USD">$ USD</option>
+    </select>
+    <input type="text"   name="holding_label"  class="h-label" placeholder="라벨 (예: 예수금)">
+    <input type="number" name="holding_amount" class="h-amount" placeholder="금액" step="any" min="0">
+    <input type="text"   name="holding_ticker" class="h-ticker" placeholder="티커 (AAPL)" autocomplete="off">
+    <input type="number" name="holding_qty"    class="h-qty" placeholder="수량" step="any" min="0">
+    <button type="button" class="icon-btn h-del" title="삭제">✕</button>
+  </div>
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.HOLDINGS = {{ holdings_json | safe }};
+</script>
+<script src="{{ url_for('static', filename='js/assets-form.js') }}"></script>
+{% endblock %}

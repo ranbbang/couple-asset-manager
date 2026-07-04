@@ -1,0 +1,62 @@
+{% extends "shell.html" %}
+{% from "_formhelpers.html" import render_field %}
+{% block title %}{{ '카테고리 수정' if mode == 'edit' else '카테고리 추가' }} · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">설정 · CATEGORIES</span>
+    <h1>{{ '카테고리 수정 ✏️' if mode == 'edit' else '카테고리 추가 ＋' }}</h1>
+    <div class="sub">이름·아이콘·색상과 부채 여부, 리포트 그룹을 지정하세요.</div>
+  </div>
+</div>
+
+<div class="card" style="max-width:560px;">
+  <form method="post" novalidate id="cat-form">
+    {{ form.hidden_tag() }}
+    {{ render_field(form.name, autofocus=true) }}
+    <div class="form-row">
+      {{ render_field(form.icon) }}
+      {{ render_field(form.color) }}
+    </div>
+    <label class="check-row">
+      {{ form.is_liability(id="is-liability") }}
+      <span>{{ form.is_liability.label.text }}</span>
+    </label>
+    <label class="check-row" id="re-row">
+      {{ form.is_real_estate(id="is-re") }}
+      <span>{{ form.is_real_estate.label.text }}</span>
+    </label>
+    <div class="field" id="group-field">
+      {{ form.report_group.label }}
+      {{ form.report_group() }}
+      {% for e in form.report_group.errors %}<div class="err">{{ e }}</div>{% endfor %}
+    </div>
+    <div style="display:flex; gap:10px; margin-top:8px;">
+      {{ form.submit(class="btn btn-primary") }}
+      <a href="{{ url_for('categories.index') }}" class="btn btn-ghost">취소</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Report group only applies to asset categories; dim it for liabilities.
+  (function () {
+    var chk = document.getElementById("is-liability");
+    var field = document.getElementById("group-field");
+    var reRow = document.getElementById("re-row");
+    var reChk = document.getElementById("is-re");
+    if (!chk || !field) return;
+    function sync() {
+      field.style.opacity = chk.checked ? "0.4" : "1";
+      field.querySelector("select").disabled = chk.checked;
+      if (reRow) { reRow.style.opacity = chk.checked ? "0.4" : "1"; }
+      if (reChk) { reChk.disabled = chk.checked; if (chk.checked) reChk.checked = false; }
+    }
+    chk.addEventListener("change", sync);
+    sync();
+  })();
+</script>
+{% endblock %}

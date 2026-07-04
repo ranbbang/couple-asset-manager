@@ -1,0 +1,40 @@
+{% extends "shell.html" %}
+{% block title %}파트너 초대 · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">초대 · INVITE</span>
+    <h1>파트너 초대 💌</h1>
+    <div class="sub">아래 코드를 파트너에게 공유하면 같은 가구로 연결됩니다.</div>
+  </div>
+</div>
+
+<div class="card" style="max-width:560px;">
+  {% if partner %}
+    <div class="flash success" style="margin-bottom:16px;">
+      이미 <b>{{ partner.display_name }}</b>님과 연결되어 있어요. 💕
+    </div>
+  {% endif %}
+
+  <label style="font-weight:600; color:var(--ink-soft); font-size:0.88rem;">우리 가구 초대 코드</label>
+  <div class="code-box">
+    <span class="code">{{ couple.invite_code }}</span>
+    <button class="btn btn-primary btn-sm" data-copy="{{ couple.invite_code }}">코드 복사</button>
+  </div>
+  <p style="color:var(--ink-soft); font-size:0.88rem;">
+    파트너가 회원가입 후 <b>가구 설정 → 파트너와 연결하기</b>에 이 코드를 입력하면 됩니다.
+    {% if not partner %}한 가구에는 최대 2명까지 연결할 수 있어요.{% endif %}
+  </p>
+
+  <div class="divider">가구 구성원</div>
+  {% for member in couple.members %}
+    <div class="list-row">
+      <span class="owner-badge">🙋 {{ member.display_name }}</span>
+      <span class="where">{{ member.email }}</span>
+      <span class="spacer"></span>
+      {% if member.id == current_user.id %}<span class="pill">나</span>{% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

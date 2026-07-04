@@ -1,0 +1,14 @@
+{# Reusable field renderer: label, widget, and validation errors. #}
+{% macro render_field(field, autofocus=false) %}
+  <div class="field">
+    {{ field.label }}
+    {% if autofocus %}
+      {{ field(autofocus=true, **kwargs) }}
+    {% else %}
+      {{ field(**kwargs) }}
+    {% endif %}
+    {% for error in field.errors %}
+      <div class="err">{{ error }}</div>
+    {% endfor %}
+  </div>
+{% endmacro %}

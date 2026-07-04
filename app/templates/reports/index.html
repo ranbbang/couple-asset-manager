@@ -1,0 +1,102 @@
+{% extends "shell.html" %}
+{% block title %}자산 리포트 · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">리포트 · REPORTS</span>
+    <h1>자산 리포트 📈</h1>
+    <div class="sub">시간에 따른 순자산·자산 구성 변화를 한눈에 확인하세요.</div>
+  </div>
+  <form method="post" action="{{ url_for('reports.record_snapshot') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-primary">📸 이번 달 스냅샷 기록</button>
+  </form>
+</div>
+
+{% if not report.hasData %}
+  <div class="card empty">
+    <div class="big">📭</div>
+    <p>아직 기록된 스냅샷이 없어요.<br>자산을 추가하면 매월 자동으로 추이가 기록됩니다.</p>
+    <a href="{{ url_for('assets.create') }}" class="btn btn-primary">＋ 자산 추가</a>
+  </div>
+{% else %}
+  {# ---- controls: currency + period ---- #}
+  <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+    <div class="rate-note" id="report-rate">표시 통화를 선택하세요.</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <div class="seg" aria-label="표시 통화">
+        <button class="seg-btn active" data-cur="KRW" type="button">₩ 원</button>
+        <button class="seg-btn" data-cur="USD" type="button">$ 달러</button>
+      </div>
+      <div class="seg" aria-label="기간">
+        <button class="seg-btn active" data-period="month" type="button">월별</button>
+        <button class="seg-btn" data-period="year" type="button">연도별</button>
+      </div>
+    </div>
+  </div>
+
+  {# ---- net worth trend (full width, incl. 부동산 제외) ---- #}
+  <div class="card" style="margin-bottom:18px;">
+    <h2>순자산 추이 (Net Worth Trend)</h2>
+    <div class="chart-legend">
+      <span><i style="background:#9DBE8A;"></i> 순자산</span>
+      <span><i style="background:#C8B66E;"></i> 부동산 제외 순자산</span>
+    </div>
+    <div class="chart-wrap"><canvas id="chart-networth"></canvas></div>
+  </div>
+
+  {# ===== selectable ratio bar (req: Sector Allocation 스타일) ===== #}
+  <div class="card" style="margin-bottom:18px;" id="ratio-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <h2 style="margin:0;">자산 비율 분석 <span class="rate-note">항목을 넣고 빼며 비율 확인</span></h2>
+    </div>
+    <div id="ratio-picker" class="ratio-picker"></div>
+    <div id="ratio-bar" class="ratio-bar"></div>
+    <div id="ratio-legend" class="ratio-legend"></div>
+    <p class="rate-note" style="margin-top:10px;">
+      💡 기본 선택은 <b>현금성 투자자산 · 중위험 · 고위험</b>(투자 예수금 vs 투자금)이에요. ‘현금’을 빼면 순수 투자 비중만 보입니다.
+    </p>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <h2>총자산 성장 (Asset Growth)</h2>
+      <div class="chart-wrap"><canvas id="chart-growth"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>자산 배분 (Allocation)</h2>
+      <div class="chart-wrap"><canvas id="chart-allocation"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>투자 자산 추이 (Investments)</h2>
+      <div class="chart-wrap"><canvas id="chart-investment"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>현금성 자산 추이 (Cash)</h2>
+      <div class="chart-wrap"><canvas id="chart-cash"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>노후·안전 자산 추이 (Retirement & Safe)</h2>
+      <div class="chart-wrap"><canvas id="chart-safe"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>현금성 투자자산 대비 투자(중·고위험) 비중</h2>
+      <div class="chart-wrap"><canvas id="chart-invcash"></canvas></div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block head_extra %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.REPORT_DATA = {{ report | tojson }};
+    window.CACHED_RATE = {{ cached_rate | tojson }};
+    window.FX_RATE_URL = "{{ url_for('main.fx_rate') }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "shell.html" %}
+{% block title %}활동 기록 · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">활동 · ACTIVITY</span>
+    <h1>활동 기록 📜</h1>
+    <div class="sub">두 사람이 자산과 목표에 적용한 모든 변경 내역입니다.</div>
+  </div>
+</div>
+
+<div class="card">
+  {% if entries %}
+    {% for entry in entries %}
+      <div class="feed-row">
+        <div class="ic">{{ entry.icon }}</div>
+        <div style="flex:1;">
+          <div>{{ entry.action }}</div>
+          <time class="when" data-ts="{{ entry.created_at.isoformat() }}Z">{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</time>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="empty">
+      <div class="big">📭</div>
+      <p>아직 활동 기록이 없어요.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

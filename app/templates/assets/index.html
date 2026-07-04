@@ -1,0 +1,111 @@
+{% extends "shell.html" %}
+{% block title %}자산 · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">자산 · ASSETS</span>
+    <h1>자산 💼</h1>
+    <div class="sub">한 계좌에 현금·주식을 함께 담아 카테고리별로 관리하세요.</div>
+  </div>
+  <div style="display:flex; gap:8px;">
+    {% if has_stocks %}
+    <form method="post" action="{{ url_for('assets.refresh_prices') }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-ghost">🔄 가격 새로고침</button>
+    </form>
+    {% endif %}
+    <a href="{{ url_for('assets.create') }}" class="btn btn-primary">＋ 자산 추가</a>
+  </div>
+</div>
+
+{# ===== Asset Overview: currency display toggle + summary + chart ===== #}
+<div class="card" id="asset-overview" style="margin-bottom:22px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <h2 style="margin:0;">자산 개요</h2>
+    <div class="seg" role="tablist" aria-label="통화 표시 방식">
+      <button class="seg-btn active" data-mode="separate" type="button">통화별 보기</button>
+      <button class="seg-btn" data-mode="combined" type="button">합산 보기</button>
+    </div>
+  </div>
+  <div id="overview-summary" class="grid" style="margin-top:18px;"></div>
+  <div id="overview-rate" class="rate-note" style="margin-top:8px; display:none;"></div>
+  <div id="overview-charts" class="grid cols-2" style="margin-top:18px;"></div>
+</div>
+
+{% if assets %}
+  {% for category in categories %}
+    {% set rows = assets | selectattr('category_id', 'equalto', category.id) | list %}
+    {% if rows %}
+      <div class="asset-group">
+        <h3>
+          <span class="ic" style="display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:{{ category.color }}1f;">{{ category.icon }}</span>
+          {{ category.name }}
+          {% if category.is_real_estate %}<span class="pill" style="margin-left:4px;">부동산</span>{% endif %}
+          {% if not category.is_liability and cat_share.get(category.id) %}
+            <span class="pill" style="margin-left:4px; color:{{ category.color }};">{{ cat_share.get(category.id) }}%</span>
+          {% endif %}
+          <span class="cat-total" title="통계 포함 자산의 원화 환산">
+            {{ '−' if category.is_liability }}≈ {{ cat_krw.get(category.id, 0) | won }}
+          </span>
+        </h3>
+        {% for asset in rows %}
+          <div class="list-row acct-row" style="{{ 'opacity:0.55;' if asset.exclude_from_stats }}">
+            <span class="owner-badge">{{ '🤝 공동' if not asset.owner else '🙋 ' ~ asset.owner.display_name }}</span>
+            <div style="flex:1; min-width:0;">
+              <div class="name">{{ asset.name }}
+                {% for cur in asset.currencies %}<span class="cur-tag">{{ cur }}</span>{% endfor %}
+                {% if asset.exclude_from_stats %}<span class="cur-tag" title="합계·차트·추이에서 제외됨">📊 제외</span>{% endif %}
+              </div>
+              {% if asset.institution %}<div class="where">{{ asset.institution }}</div>{% endif %}
+              {# holdings breakdown (only if more than one, or a stock) #}
+              {% if asset.holdings|length > 1 or (asset.holdings and asset.holdings[0].is_stock) %}
+                <div class="holdings-mini">
+                  {% for h in asset.holdings %}
+                    <span class="hmini">
+                      {% if h.is_stock %}📈 {{ h.ticker }} × {{ h.quantity|float|round(4) }}
+                        <b>{{ h.value_native | money(h.currency) }}</b>
+                      {% else %}💵 {{ h.label or '현금' }} <b>{{ h.value_native | money(h.currency) }}</b>{% endif %}
+                    </span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            <span class="spacer"></span>
+            <div style="text-align:right;">
+              <span class="amt {{ 'neg' if asset.is_liability }}">{{ '−' if asset.is_liability }}≈ {{ asset_krw.get(asset.id, 0) | won }}</span>
+              <div class="amt-sub">{{ asset_krw.get(asset.id, 0) | won_short }}</div>
+            </div>
+            <div class="row-actions">
+              <a href="{{ url_for('assets.edit', asset_id=asset.id) }}" class="btn btn-ghost btn-sm">수정</a>
+              <form method="post" action="{{ url_for('assets.delete', asset_id=asset.id) }}"
+                    onsubmit="return confirm('‘{{ asset.name }}’ 자산을 삭제할까요?');" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-sm">삭제</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+{% else %}
+  <div class="card empty">
+    <div class="big">🌱</div>
+    <p>아직 등록된 자산이 없어요.<br>현금, 투자, 주식 계좌, 부채를 추가해 시작하세요.</p>
+    <a href="{{ url_for('assets.create') }}" class="btn btn-primary">＋ 첫 자산 추가</a>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block head_extra %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    window.ASSET_OVERVIEW = {{ overview | tojson }};
+    window.FX_RATE_URL = "{{ url_for('main.fx_rate') }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/assets.js') }}"></script>
+{% endblock %}
