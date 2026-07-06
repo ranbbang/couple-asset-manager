@@ -31,7 +31,10 @@
           </div>
           <a href="{{ url_for('categories.index') }}">🏷️ 카테고리 관리</a>
           <a href="{{ url_for('couple.invite') }}">💌 파트너 초대</a>
-          <a href="{{ url_for('auth.logout') }}">↩ 로그아웃</a>
+          <form method="post" action="{{ url_for('auth.logout') }}" class="logout-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="linklike">↩ 로그아웃</button>
+          </form>
         </div>
       </div>
     </div>

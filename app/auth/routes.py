@@ -49,14 +49,14 @@ def login():
         login_user(user, remember=True)
         # Respect ?next= but only for local paths (open-redirect guard).
         next_page = request.args.get("next")
-        if not next_page or not next_page.startswith("/"):
+        if not next_page or not next_page.startswith("/") or next_page.startswith("//"):
             next_page = url_for("main.dashboard")
         return redirect(next_page)
 
     return render_template("auth/login.html", form=form)
 
 
-@auth_bp.route("/logout")
+@auth_bp.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()

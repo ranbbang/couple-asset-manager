@@ -151,6 +151,18 @@ small { color: var(--ink-soft); }
   color: var(--ink-soft); font-size: 0.88rem; font-weight: 500;
 }
 .user-menu .menu a:hover { background: var(--surface-2); color: var(--ink); }
+/* Button that looks/behaves like a link (used for the POST logout form). */
+.linklike {
+  background: none; border: 0; cursor: pointer; font: inherit;
+  color: var(--accent); font-weight: 700; padding: 0;
+}
+.user-menu .menu .logout-form { margin: 0; }
+.user-menu .menu .logout-form .linklike {
+  display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: 8px;
+  width: 100%; text-align: left;
+  color: var(--ink-soft); font-size: 0.88rem; font-weight: 500;
+}
+.user-menu .menu .logout-form .linklike:hover { background: var(--surface-2); color: var(--ink); }
 
 /* ====== PAGE ============================================================= */
 .page { min-height: calc(100vh - 56px); padding: 40px 28px 72px; }

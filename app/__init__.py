@@ -14,6 +14,12 @@ def create_app(config_class: type = Config) -> Flask:
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    if app.config.get("SECRET_KEY") == "dev-secret-change-me":
+        app.logger.warning(
+            "SECRET_KEY is the development default — set the SECRET_KEY "
+            "environment variable before exposing this app on a network."
+        )
+
     # --- extensions -------------------------------------------------------
     db.init_app(app)
     login_manager.init_app(app)
