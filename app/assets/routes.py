@@ -121,9 +121,13 @@ def _parse_holdings() -> list[Holding]:
 @login_required
 @couple_required
 def index():
+    from sqlalchemy.orm import selectinload
+
     rate = fx.get_cached_rate()
     assets = sorted(
-        Asset.query.filter_by(couple_id=current_user.couple_id).all(),
+        Asset.query.filter_by(couple_id=current_user.couple_id)
+        .options(selectinload(Asset.holdings), selectinload(Asset.category))
+        .all(),
         key=lambda a: a.value_krw(rate),
         reverse=True,
     )
@@ -222,11 +226,12 @@ def edit(asset_id: int):
         flash("자산이 수정되었습니다.", "success")
         return redirect(url_for("assets.index"))
 
-    if asset.owner_id is None:
-        form.owner.data = JOINT_OWNER_VALUE
-    else:
-        form.owner.data = str(asset.owner_id)
-    form.category.data = asset.category_id
+    if request.method == "GET":
+        if asset.owner_id is None:
+            form.owner.data = JOINT_OWNER_VALUE
+        else:
+            form.owner.data = str(asset.owner_id)
+        form.category.data = asset.category_id
     return render_template("assets/form.html", form=form, mode="edit", asset=asset,
                            holdings_json=_holdings_json(asset))
 

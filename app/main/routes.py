@@ -23,8 +23,16 @@ def index():
 @login_required
 @couple_required
 def dashboard():
+    from sqlalchemy.orm import selectinload
+
+    from ..models import Asset
+
     couple = current_user.couple
-    assets = couple.assets
+    assets = (
+        Asset.query.filter_by(couple_id=couple.id)
+        .options(selectinload(Asset.holdings), selectinload(Asset.category))
+        .all()
+    )
     rate = fx.get_cached_rate()
     summary = dashboard_summary(assets, rate)
     goals = (
