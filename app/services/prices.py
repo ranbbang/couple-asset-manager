@@ -94,10 +94,17 @@ def fetch_quotes(tickers, timeout: float = 5.0) -> dict:
             if cached:
                 out[ticker] = {"price": cached["price"], "currency": cached["currency"], "source": "fallback"}
 
-    # Persist the freshest memory cache for offline restarts.
+    # Persist the freshest memory cache for offline restarts, merged over the
+    # existing file cache so tickers that failed this round keep their
+    # last-known price instead of being wiped.
     if out:
-        snapshot = {t: {"price": v["price"], "currency": v["currency"], "at": _memory.get(t, {}).get("at", now)}
-                    for t, v in _memory.items()}
+        if file_cache is None:
+            file_cache = _read_file_cache()
+        snapshot = dict(file_cache)
+        snapshot.update({
+            t: {"price": v["price"], "currency": v["currency"], "at": v["at"]}
+            for t, v in _memory.items()
+        })
         _write_file_cache(snapshot)
     return out
 
