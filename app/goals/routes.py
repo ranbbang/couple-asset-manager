@@ -1,7 +1,7 @@
 """Shared goal CRUD routes, scoped to the current user's household."""
 import json
 
-from flask import Blueprint, abort, flash, redirect, render_template, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..decorators import couple_required
@@ -11,7 +11,7 @@ from ..services import categories as categories_svc
 from ..services import fx, goals as goals_svc, snapshots
 from ..services.activity import log_activity
 from ..services.finance import _is_liability
-from .forms import GoalForm
+from .forms import JOINT_OWNER_VALUE, GoalForm
 
 goals_bp = Blueprint("goals", __name__, url_prefix="/goals")
 
@@ -24,7 +24,11 @@ def _get_owned_goal(goal_id: int) -> Goal:
 
 
 def _populate_links(form: GoalForm) -> None:
-    """Category + asset choices a goal can link to (non-liability only)."""
+    """Owner, category, and asset choices (links are non-liability only)."""
+    owner_choices = [(JOINT_OWNER_VALUE, "🤝  공동 목표")]
+    for member in current_user.couple.members:
+        owner_choices.append((str(member.id), f"🙋  {member.display_name}의 목표"))
+    form.owner.choices = owner_choices
     cats = [c for c in categories_svc.ordered(current_user.couple) if not c.is_liability]
     form.linked_categories.choices = [
         (c.id, f"{c.icon}  {c.name}") for c in cats
@@ -95,9 +99,11 @@ def edit(goal_id: int):
         db.session.commit()
         flash("목표가 수정되었습니다.", "success")
         return redirect(url_for("goals.index"))
-    # Preselect linked ids on GET.
-    form.linked_categories.data = goal.category_id_list
-    form.linked_assets.data = goal.asset_id_list
+    # Preselect linked ids and owner on GET.
+    if request.method == "GET":
+        form.linked_categories.data = goal.category_id_list
+        form.linked_assets.data = goal.asset_id_list
+        form.owner.data = str(goal.owner_id) if goal.owner_id else JOINT_OWNER_VALUE
     return render_template("goals/form.html", form=form, mode="edit", goal=goal)
 
 
@@ -120,6 +126,10 @@ def delete(goal_id: int):
 
 def _apply(form: GoalForm, goal: Goal) -> None:
     goal.name = form.name.data.strip()
+    member_ids = {str(m.id) for m in current_user.couple.members}
+    goal.owner_id = (
+        int(form.owner.data) if form.owner.data in member_ids else None
+    )
     goal.target_amount = form.target_amount.data
     goal.saved_amount = form.saved_amount.data or 0
     goal.stocks_amount = form.stocks_amount.data or 0

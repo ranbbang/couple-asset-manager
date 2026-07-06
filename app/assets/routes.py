@@ -143,6 +143,7 @@ def index():
     asset_krw = {a.id: a.value_krw(rate) for a in assets}
     total = finance.total_assets(assets, rate)
     has_stocks = any(h.kind == "stock" for a in assets for h in a.holdings)
+    owner_rows = finance.owner_breakdown(assets, rate, current_user.couple.members)
     return render_template(
         "assets/index.html",
         assets=assets,
@@ -153,6 +154,7 @@ def index():
         asset_krw=asset_krw,
         total_assets=total,
         has_stocks=has_stocks,
+        owner_rows=owner_rows,
         cached_rate=rate,
     )
 
@@ -257,12 +259,22 @@ def delete(asset_id: int):
     asset = _get_owned_asset(asset_id)
     name = asset.name
     old_value = asset.value_krw(fx.get_cached_rate())
+    # Record what was inside so an accidental delete can be re-entered by hand.
+    parts = []
+    for h in asset.holdings:
+        if h.is_stock:
+            parts.append(f"{h.ticker} {float(h.quantity or 0):g}주")
+        else:
+            parts.append(f"{h.display_name} {h.symbol}{float(h.amount or 0):,.0f}")
+    detail = _won(old_value)
+    if parts:
+        detail += " · " + ", ".join(parts)
     db.session.delete(asset)
     log_activity(
         current_user.couple_id, current_user,
         f"{current_user.display_name}님이 '{name}' 자산을 삭제했습니다.",
         icon="🗑️",
-        detail=_won(old_value),
+        detail=detail[:255],
     )
     db.session.commit()
     _sync_snapshot()

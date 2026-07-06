@@ -17,6 +17,34 @@
   </div>
 </div>
 
+{# ===== Target allocation vs current (rebalancing) ===== #}
+<div class="card" style="margin-bottom:18px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <h2 style="margin:0;">목표 자산배분 🎛️</h2>
+    <span class="rate-note">그룹별 목표 비중(%)을 정하면 현재 비중과의 차이를 보여줍니다 (±5%p 이상이면 리밸런싱 신호)</span>
+  </div>
+  <form method="post" action="{{ url_for('reports.set_allocation') }}" class="alloc-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="alloc-grid">
+      {% for row in allocation_rows %}
+      <div class="alloc-row">
+        <span class="alloc-label"><i style="background:{{ row.color }};"></i>{{ row.label }}</span>
+        <span class="alloc-current">현재 {{ row.current }}%</span>
+        <input type="text" inputmode="decimal" name="target_{{ row.key }}"
+               value="{{ row.target if row.target is not none else '' }}" placeholder="목표 %">
+        {% if row.diff is not none %}
+          <span class="alloc-diff {{ 'signal' if row.signal }}">
+            {% if row.signal %}{{ '▼ ' ~ row.diff ~ '%p 초과 — 축소 검토' if row.diff > 0 else '▲ ' ~ (row.diff | abs) ~ '%p 부족 — 확대 검토' }}
+            {% else %}{{ '+' if row.diff >= 0 }}{{ row.diff }}%p{% endif %}
+          </span>
+        {% else %}<span class="alloc-diff">—</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn btn-ghost btn-sm" style="margin-top:10px;">목표 비중 저장</button>
+  </form>
+</div>
+
 {% if not report.hasData %}
   <div class="card empty">
     <div class="big">📭</div>

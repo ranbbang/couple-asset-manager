@@ -116,6 +116,26 @@ def month_over_month(couple, current_net_worth) -> dict | None:
     return {"delta": delta, "pct": pct, "since": prev.taken_on}
 
 
+def flow_split(couple, assets, rate) -> dict | None:
+    """Rough cash-vs-investment split of the MoM change (no transaction data).
+
+    Compares live report-group totals against the last pre-current-month
+    snapshot: the 'cash' group's delta approximates money saved/spent, the
+    remaining groups' delta approximates investment value change.
+    """
+    prev = previous_month_snapshot(couple)
+    if prev is None:
+        return None
+    cur = _compute(assets, rate)["group_totals"]
+    prev_groups = json.loads(prev.group_totals or "{}")
+    invest_keys = [k for k in REPORT_GROUP_KEYS if k != "cash"]
+    cash_delta = cur["cash"] - Decimal(str(prev_groups.get("cash", 0)))
+    invest_delta = sum((cur[k] for k in invest_keys), Decimal(0)) - Decimal(
+        str(sum(prev_groups.get(k, 0) for k in invest_keys))
+    )
+    return {"cash": cash_delta, "invest": invest_delta}
+
+
 def avg_monthly_gain(couple, months: int = 6) -> Decimal | None:
     """Average month-over-month net-worth increase over the recent snapshots.
 

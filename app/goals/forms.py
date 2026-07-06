@@ -7,11 +7,15 @@ are a fallback used only when nothing is linked.
 from flask_wtf import FlaskForm
 from wtforms import (
     DecimalField,
+    SelectField,
     SelectMultipleField,
     StringField,
     SubmitField,
 )
 from wtforms.validators import DataRequired, Length, NumberRange, Optional
+
+# Sentinel value in the owner <select> meaning "shared couple goal".
+JOINT_OWNER_VALUE = "joint"
 
 
 class GoalForm(FlaskForm):
@@ -26,6 +30,7 @@ class GoalForm(FlaskForm):
         validators=[DataRequired(), NumberRange(min=1, message="1 이상으로 입력하세요.")],
         render_kw={"placeholder": "0", "min": "1", "step": "1"},
     )
+    owner = SelectField("목표 주체", validators=[DataRequired()])
     # Auto-linked sources (choices populated in the route).
     linked_categories = SelectMultipleField("연동 카테고리", coerce=int)
     linked_assets = SelectMultipleField("연동 개별 자산", coerce=int)

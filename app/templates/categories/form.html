@@ -27,6 +27,10 @@
       {{ form.is_real_estate(id="is-re") }}
       <span>{{ form.is_real_estate.label.text }}</span>
     </label>
+    <label class="check-row" id="liquid-row">
+      {{ form.is_liquid(id="is-liquid") }}
+      <span>{{ form.is_liquid.label.text }}</span>
+    </label>
     <div class="field" id="group-field">
       {{ form.report_group.label }}
       {{ form.report_group() }}
@@ -48,12 +52,16 @@
     var field = document.getElementById("group-field");
     var reRow = document.getElementById("re-row");
     var reChk = document.getElementById("is-re");
+    var lqRow = document.getElementById("liquid-row");
+    var lqChk = document.getElementById("is-liquid");
     if (!chk || !field) return;
     function sync() {
       field.style.opacity = chk.checked ? "0.4" : "1";
       field.querySelector("select").disabled = chk.checked;
       if (reRow) { reRow.style.opacity = chk.checked ? "0.4" : "1"; }
       if (reChk) { reChk.disabled = chk.checked; if (chk.checked) reChk.checked = false; }
+      if (lqRow) { lqRow.style.opacity = chk.checked ? "0.4" : "1"; }
+      if (lqChk) { lqChk.disabled = chk.checked; if (chk.checked) lqChk.checked = false; }
     }
     chk.addEventListener("change", sync);
     sync();

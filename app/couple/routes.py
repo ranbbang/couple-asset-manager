@@ -2,7 +2,7 @@
 import secrets
 import string
 
-from flask import Blueprint, flash, redirect, render_template, url_for
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
 from ..extensions import db
@@ -99,6 +99,30 @@ def join():
     db.session.commit()
     flash("파트너와 연결되었어요!", "success")
     return redirect(url_for("main.dashboard"))
+
+
+@couple_bp.route("/settings", methods=["POST"])
+@login_required
+def settings():
+    """Update lightweight household settings (currently: monthly expense)."""
+    if not current_user.has_couple:
+        return redirect(url_for("couple.setup"))
+    raw = (request.form.get("monthly_expense") or "").replace(",", "").strip()
+    couple = current_user.couple
+    if raw == "":
+        couple.monthly_expense_krw = None
+    else:
+        try:
+            value = int(raw)
+            if value < 0:
+                raise ValueError
+        except ValueError:
+            flash("월 생활비는 0 이상의 숫자로 입력해 주세요.", "error")
+            return redirect(url_for("couple.invite"))
+        couple.monthly_expense_krw = value
+    db.session.commit()
+    flash("가구 설정이 저장되었습니다.", "success")
+    return redirect(url_for("couple.invite"))
 
 
 @couple_bp.route("/invite")

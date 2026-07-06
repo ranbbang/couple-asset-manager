@@ -14,7 +14,10 @@
   <form method="post" novalidate id="goal-form">
     {{ form.hidden_tag() }}
     {{ render_field(form.name, autofocus=true) }}
-    {{ render_field(form.target_amount) }}
+    <div class="form-row">
+      {{ render_field(form.target_amount) }}
+      {{ render_field(form.owner) }}
+    </div>
 
     {# ---- linked categories ---- #}
     <div class="field">

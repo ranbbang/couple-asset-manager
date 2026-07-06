@@ -24,6 +24,7 @@ class CategoryForm(FlaskForm):
     )
     is_liability = BooleanField("부채 (순자산에서 차감)")
     is_real_estate = BooleanField("부동산 (‘부동산 제외 순자산’ 계산에서 빠짐)")
+    is_liquid = BooleanField("유동자산 (당장 현금화 가능 — 비상금 계산에 포함)")
     report_group = SelectField(
         "리포트 그룹", validators=[Optional()],
         choices=[(NO_GROUP, "— (부채는 그룹 없음)")]

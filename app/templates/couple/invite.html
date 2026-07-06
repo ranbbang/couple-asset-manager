@@ -27,6 +27,19 @@
     {% if not partner %}한 가구에는 최대 2명까지 연결할 수 있어요.{% endif %}
   </p>
 
+  <div class="divider">가구 설정</div>
+  <form method="post" action="{{ url_for('couple.settings') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="monthly-expense">월 생활비 (₩)</label>
+      <input type="text" inputmode="numeric" id="monthly-expense" name="monthly_expense"
+             value="{{ couple.monthly_expense_krw | int if couple.monthly_expense_krw else '' }}"
+             placeholder="예) 3000000">
+      <div class="rate-note">입력하면 대시보드에 유동자산이 생활비 몇 개월치인지 표시됩니다.</div>
+    </div>
+    <button type="submit" class="btn btn-ghost btn-sm">설정 저장</button>
+  </form>
+
   <div class="divider">가구 구성원</div>
   {% for member in couple.members %}
     <div class="list-row">

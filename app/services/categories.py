@@ -18,6 +18,7 @@ def create_default_categories(couple) -> list[Category]:
             is_liability=spec["is_liability"],
             report_group=spec["report_group"],
             is_real_estate=spec.get("is_real_estate", False),
+            is_liquid=spec.get("is_liquid", False),
             sort_order=spec["sort_order"],
         )
         db.session.add(cat)

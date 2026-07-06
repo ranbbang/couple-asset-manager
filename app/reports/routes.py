@@ -1,7 +1,10 @@
 """Asset Reports routes: net-worth and category trends over time."""
-from flask import Blueprint, flash, redirect, render_template, url_for
+import json
+
+from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from ..constants import REPORT_GROUP_KEYS, REPORT_GROUPS
 from ..decorators import couple_required
 from ..services import fx, snapshots
 from ..services.activity import log_activity
@@ -21,8 +24,62 @@ def index():
     return render_template(
         "reports/index.html",
         report=data,
+        allocation_rows=_allocation_rows(couple, data),
         cached_rate=fx.get_cached_rate(),
     )
+
+
+def _allocation_rows(couple, data) -> list[dict]:
+    """Target vs current share per report group (for the rebalancing card)."""
+    try:
+        targets = json.loads(couple.target_allocation or "{}")
+    except ValueError:
+        targets = {}
+    total = data["latestAssets"]
+    rows = []
+    for key in REPORT_GROUP_KEYS:
+        meta = REPORT_GROUPS[key]
+        current = (
+            round(data["latestGroups"].get(key, 0.0) / total * 100, 1)
+            if total else 0.0
+        )
+        target = targets.get(key)
+        diff = round(current - target, 1) if target is not None else None
+        rows.append({
+            "key": key, "label": meta["label"], "color": meta["color"],
+            "current": current, "target": target, "diff": diff,
+            # Signal a rebalance when off by 5%p or more.
+            "signal": diff is not None and abs(diff) >= 5,
+        })
+    return rows
+
+
+@reports_bp.route("/allocation", methods=["POST"])
+@login_required
+@couple_required
+def set_allocation():
+    """Save target allocation percentages (blank field = no target)."""
+    targets = {}
+    for key in REPORT_GROUP_KEYS:
+        raw = (request.form.get(f"target_{key}") or "").strip()
+        if not raw:
+            continue
+        try:
+            pct = float(raw)
+        except ValueError:
+            flash("목표 비중은 숫자(%)로 입력해 주세요.", "error")
+            return redirect(url_for("reports.index"))
+        if not 0 <= pct <= 100:
+            flash("목표 비중은 0~100 사이여야 합니다.", "error")
+            return redirect(url_for("reports.index"))
+        targets[key] = pct
+    if targets and sum(targets.values()) > 100.5:
+        flash("목표 비중의 합이 100%를 넘을 수 없습니다.", "error")
+        return redirect(url_for("reports.index"))
+    current_user.couple.target_allocation = json.dumps(targets)
+    db.session.commit()
+    flash("목표 자산배분이 저장되었습니다.", "success")
+    return redirect(url_for("reports.index"))
 
 
 @reports_bp.route("/export.csv")

@@ -20,6 +20,28 @@
   </div>
 </div>
 
+{# ===== Per-owner summary (명의별) ===== #}
+{% if owner_rows %}
+<div class="card" style="margin-bottom:22px;">
+  <h2>명의별 요약</h2>
+  <table class="owner-table">
+    <thead>
+      <tr><th>명의</th><th>자산</th><th>부채</th><th>순자산</th></tr>
+    </thead>
+    <tbody>
+      {% for row in owner_rows %}
+      <tr>
+        <td>{{ '🤝 공동' if row.label == '공동' else '🙋 ' + row.label }}</td>
+        <td>{{ row.assets | won }}</td>
+        <td>{{ ('−' + (row.liabilities | won)) if row.liabilities else '-' }}</td>
+        <td><b>{{ row.net | won }}</b></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
 {# ===== Asset Overview: currency display toggle + summary + chart ===== #}
 <div class="card" id="asset-overview" style="margin-bottom:22px;">
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">

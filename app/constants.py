@@ -40,9 +40,11 @@ def report_group_label(key: str) -> str:
 # name, icon, color, is_liability, report_group, is_real_estate, sort_order
 DEFAULT_CATEGORIES = [
     {"name": "현금", "icon": "💵", "color": "#9DBE8A",
-     "is_liability": False, "report_group": "cash", "is_real_estate": False, "sort_order": 0},
+     "is_liability": False, "report_group": "cash", "is_real_estate": False,
+     "is_liquid": True, "sort_order": 0},
     {"name": "현금성 투자자산", "icon": "💰", "color": "#7FA9B8",
-     "is_liability": False, "report_group": "cash", "is_real_estate": False, "sort_order": 1},
+     "is_liability": False, "report_group": "cash", "is_real_estate": False,
+     "is_liquid": True, "sort_order": 1},
     {"name": "중위험 투자자산", "icon": "📊", "color": "#A99BD6",
      "is_liability": False, "report_group": "investment", "is_real_estate": False, "sort_order": 2},
     {"name": "고위험 투자자산", "icon": "🚀", "color": "#E0997F",

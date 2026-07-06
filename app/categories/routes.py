@@ -26,8 +26,9 @@ def _apply(form: CategoryForm, cat: Category) -> None:
     cat.is_liability = form.is_liability.data
     # Liabilities have no report group; assets always do (form-validated).
     cat.report_group = None if form.is_liability.data else (form.report_group.data or None)
-    # Liabilities can't be real estate.
+    # Liabilities can't be real estate or liquid assets.
     cat.is_real_estate = bool(form.is_real_estate.data) and not form.is_liability.data
+    cat.is_liquid = bool(form.is_liquid.data) and not form.is_liability.data
 
 
 @categories_bp.route("/")

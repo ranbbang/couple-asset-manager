@@ -36,7 +36,14 @@ def dashboard():
     rate = fx.get_cached_rate()
     summary = dashboard_summary(assets, rate)
     mom = snapshots.month_over_month(couple, summary["net_worth"])
+    flow = snapshots.flow_split(couple, assets, rate)
     monthly_gain = snapshots.avg_monthly_gain(couple)
+
+    # "생활비 N개월치" — only when the household set its monthly expense.
+    liquid_months = None
+    expense = couple.monthly_expense_krw
+    if expense and expense > 0:
+        liquid_months = round(float(summary["liquid"] / expense), 1)
     goals = (
         Goal.query.filter_by(couple_id=couple.id)
         .order_by(Goal.created_at.asc())
@@ -62,6 +69,8 @@ def dashboard():
         recent=recent,
         asset_count=len(assets),
         mom=mom,
+        flow=flow,
+        liquid_months=liquid_months,
     )
 
 

@@ -21,6 +21,7 @@
     <div class="label">총 자산</div>
     <div class="value pos" data-countup="{{ summary.total_assets }}" data-prefix="₩">{{ summary.total_assets | won }}</div>
     <div class="amt-sub">{{ summary.total_assets | won_short }}</div>
+    <div class="amt-sub">💧 유동 {{ summary.liquid | won_short }}{% if liquid_months is not none %} · 생활비 {{ liquid_months }}개월치{% endif %}{% if summary.usd.pct is not none %} · $ 비중 {{ summary.usd.pct }}%{% endif %}</div>
   </div>
   <div class="card stat debts">
     <div class="chip">💢</div>
@@ -38,6 +39,9 @@
         {{ '▲' if mom.delta >= 0 else '▼' }} 지난달 대비
         {{ '+' if mom.delta >= 0 else '−' }}{{ mom.delta | abs | won }}{% if mom.pct is not none %} ({{ '+' if mom.pct >= 0 }}{{ mom.pct }}%){% endif %}
       </div>
+    {% endif %}
+    {% if flow %}
+      <div class="amt-sub">현금성 {{ '+' if flow.cash >= 0 else '−' }}{{ flow.cash | abs | won_short }} · 투자 {{ '+' if flow.invest >= 0 else '−' }}{{ flow.invest | abs | won_short }}</div>
     {% endif %}
   </div>
   <div class="card stat net">
@@ -93,6 +97,7 @@
           <div style="margin-top:16px;">
             <div class="top">
               <span style="font-weight:700;">{{ goal.name }}
+                {% if goal.owner %}<span class="pill" style="margin-left:4px;">🙋 {{ goal.owner.display_name }}</span>{% endif %}
                 {% if v and v.linked %}<span class="pill" style="margin-left:4px;">🔗 자동</span>{% endif %}
               </span>
               <span class="pct">{{ v.pct if v else 0 }}%</span>

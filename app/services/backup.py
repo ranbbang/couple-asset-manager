@@ -50,6 +50,19 @@ def _prune_old_backups() -> None:
         old.unlink(missing_ok=True)
 
 
+def auto_backup_if_due() -> Path | None:
+    """At most one automatic backup per calendar day (called on app startup).
+
+    Light local safety net for the single-household deployment; a real backup
+    strategy comes with the future hosted setup.
+    """
+    today = datetime.now().strftime("%Y%m%d")
+    for p in list_backups():
+        if p.name.startswith(f"app_{today}") and p.name.endswith("_auto.db"):
+            return None
+    return backup_database(reason="auto")
+
+
 def list_backups() -> list[Path]:
     if not BACKUP_DIR.exists():
         return []

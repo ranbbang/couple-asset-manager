@@ -26,6 +26,10 @@ class Couple(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False, default="우리집")
     invite_code = db.Column(db.String(16), unique=True, nullable=False, index=True)
+    # Optional monthly living cost (KRW) — drives the "생활비 N개월치" figure.
+    monthly_expense_krw = db.Column(db.Numeric(14, 0), nullable=True)
+    # JSON {report_group: target_pct} for the target-allocation comparison.
+    target_allocation = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     members = db.relationship("User", back_populates="couple")
@@ -113,6 +117,8 @@ class Category(db.Model):
     # When true, assets in this category are real estate (excluded from the
     # "부동산 제외 순자산" figures on the dashboard and reports).
     is_real_estate = db.Column(db.Boolean, nullable=False, default=False)
+    # When true, assets here count as liquid (당장 현금화 가능 — 비상금 지표).
+    is_liquid = db.Column(db.Boolean, nullable=False, default=False)
     sort_order = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -276,6 +282,8 @@ class Goal(db.Model):
     couple_id = db.Column(
         db.Integer, db.ForeignKey("couples.id"), nullable=False, index=True
     )
+    # NULL owner == a shared (couple) goal; set == a personal goal.
+    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
     name = db.Column(db.String(120), nullable=False)
     target_amount = db.Column(db.Numeric(16, 2), nullable=False, default=0)
@@ -293,6 +301,11 @@ class Goal(db.Model):
     )
 
     couple = db.relationship("Couple", back_populates="goals")
+    owner = db.relationship("User")
+
+    @property
+    def owner_label(self) -> str:
+        return self.owner.display_name if self.owner else "공동"
 
     # --- link helpers -----------------------------------------------------
     @property

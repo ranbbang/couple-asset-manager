@@ -53,6 +53,13 @@ def create_app(config_class: type = Config) -> Flask:
         db.create_all()
         _apply_micro_migrations()
 
+        # Best-effort daily local backup (sqlite only; never blocks startup).
+        try:
+            from .services.backup import auto_backup_if_due
+            auto_backup_if_due()
+        except Exception:
+            app.logger.warning("automatic daily backup failed", exc_info=True)
+
     return app
 
 
@@ -64,10 +71,16 @@ def _apply_micro_migrations() -> None:
     from sqlalchemy import inspect, text
 
     inspector = inspect(db.engine)
+    # (table, column, DDL, optional one-time backfill SQL run after adding)
     wanted = [
-        ("activity_logs", "detail", "VARCHAR(255)"),
+        ("activity_logs", "detail", "VARCHAR(255)", None),
+        ("categories", "is_liquid", "BOOLEAN NOT NULL DEFAULT 0",
+         "UPDATE categories SET is_liquid = 1 WHERE report_group = 'cash'"),
+        ("couples", "monthly_expense_krw", "NUMERIC(14, 0)", None),
+        ("couples", "target_allocation", "TEXT", None),
+        ("goals", "owner_id", "INTEGER REFERENCES users(id)", None),
     ]
-    for table, column, ddl in wanted:
+    for table, column, ddl, backfill in wanted:
         if not inspector.has_table(table):
             continue
         existing = {c["name"] for c in inspector.get_columns(table)}
@@ -75,6 +88,8 @@ def _apply_micro_migrations() -> None:
             db.session.execute(
                 text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
             )
+            if backfill:
+                db.session.execute(text(backfill))
             db.session.commit()
 
 

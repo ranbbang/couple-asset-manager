@@ -51,6 +51,60 @@ def real_estate_total(assets, rate) -> Decimal:
     )
 
 
+def liquid_total(assets, rate) -> Decimal:
+    """Sum of liquid (당장 현금화 가능) non-liability accounts."""
+    return sum(
+        (a.value_krw(rate) for a in included(assets)
+         if a.category and a.category.is_liquid and not _is_liability(a)),
+        Decimal(0),
+    )
+
+
+def usd_exposure(assets, rate) -> dict:
+    """KRW-converted USD holdings total and its share of total assets.
+
+    Only non-liability accounts count; share is None when there are no assets.
+    """
+    usd_krw = Decimal(0)
+    for a in included(assets):
+        if _is_liability(a):
+            continue
+        for h in a.holdings:
+            if h.currency == "USD":
+                usd_krw += h.value_krw(rate)
+    total = total_assets(assets, rate)
+    pct = round(float(usd_krw / total * 100), 1) if total > 0 else None
+    return {"krw": usd_krw, "pct": pct}
+
+
+def owner_breakdown(assets, rate, members) -> list[dict]:
+    """Per-owner totals: one row per member plus 공동 (owner_id NULL).
+
+    Rows: {"label", "assets", "liabilities", "net"}; empty rows are dropped.
+    """
+    labels = {m.id: m.display_name for m in members}
+    buckets = {}
+    for a in included(assets):
+        key = a.owner_id if a.owner_id in labels else None
+        b = buckets.setdefault(key, {"assets": Decimal(0), "liabilities": Decimal(0)})
+        if _is_liability(a):
+            b["liabilities"] += a.value_krw(rate)
+        else:
+            b["assets"] += a.value_krw(rate)
+    rows = []
+    for key in [*labels, None]:
+        b = buckets.get(key)
+        if not b:
+            continue
+        rows.append({
+            "label": labels.get(key, "공동"),
+            "assets": b["assets"],
+            "liabilities": b["liabilities"],
+            "net": b["assets"] - b["liabilities"],
+        })
+    return rows
+
+
 def net_worth(assets, rate) -> Decimal:
     return total_assets(assets, rate) - total_liabilities(assets, rate)
 
@@ -103,6 +157,8 @@ def dashboard_summary(assets, rate) -> dict:
         "real_estate": real_estate_total(assets, rate),
         "net_worth_excl_re": net_worth_excl_real_estate(assets, rate),
         "breakdown": category_breakdown(assets, rate),
+        "liquid": liquid_total(assets, rate),
+        "usd": usd_exposure(assets, rate),
     }
 
 

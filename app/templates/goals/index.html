@@ -18,6 +18,7 @@
       <div class="card goal-card">
         <div class="top">
           <h2 style="margin:0;">{{ goal.name }}
+            <span class="pill" style="margin-left:6px;">{{ '🙋 ' + goal.owner.display_name if goal.owner else '🤝 공동' }}</span>
             {% if v and v.linked %}<span class="pill" style="margin-left:6px;">🔗 자동 연동</span>{% endif %}
           </h2>
           <span class="pct">{{ v.pct if v else 0 }}%</span>
