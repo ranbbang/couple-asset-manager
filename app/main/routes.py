@@ -4,7 +4,7 @@ from flask_login import current_user, login_required
 
 from ..decorators import couple_required
 from ..models import ActivityLog, Goal
-from ..services import fx, goals as goals_svc
+from ..services import fx, goals as goals_svc, snapshots
 from ..services.finance import dashboard_summary
 
 main_bp = Blueprint("main", __name__)
@@ -35,12 +35,16 @@ def dashboard():
     )
     rate = fx.get_cached_rate()
     summary = dashboard_summary(assets, rate)
+    mom = snapshots.month_over_month(couple, summary["net_worth"])
+    monthly_gain = snapshots.avg_monthly_gain(couple)
     goals = (
         Goal.query.filter_by(couple_id=couple.id)
         .order_by(Goal.created_at.asc())
         .all()
     )
-    goal_views = {g.id: goals_svc.goal_view(g, couple, rate) for g in goals}
+    goal_views = {
+        g.id: goals_svc.goal_view(g, couple, rate, monthly_gain) for g in goals
+    }
     recent = (
         ActivityLog.query.filter_by(couple_id=couple.id)
         .order_by(ActivityLog.created_at.desc())
@@ -57,6 +61,7 @@ def dashboard():
         goal_views=goal_views,
         recent=recent,
         asset_count=len(assets),
+        mom=mom,
     )
 
 

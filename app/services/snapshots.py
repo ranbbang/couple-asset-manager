@@ -89,6 +89,50 @@ def refresh_current_month(couple, rate) -> AssetSnapshot:
     return snap
 
 
+def previous_month_snapshot(couple) -> AssetSnapshot | None:
+    """The most recent snapshot before the current month (for MoM deltas)."""
+    return (
+        AssetSnapshot.query.filter(
+            AssetSnapshot.couple_id == couple.id,
+            AssetSnapshot.taken_on < month_start(),
+        )
+        .order_by(AssetSnapshot.taken_on.desc())
+        .first()
+    )
+
+
+def month_over_month(couple, current_net_worth) -> dict | None:
+    """MoM change of net worth vs the last pre-current-month snapshot.
+
+    Returns {"delta": Decimal, "pct": float|None, "since": date} or None when
+    there is no earlier month to compare against.
+    """
+    prev = previous_month_snapshot(couple)
+    if prev is None:
+        return None
+    prev_net = Decimal(str(prev.net_worth_krw or 0))
+    delta = Decimal(str(current_net_worth)) - prev_net
+    pct = round(float(delta / abs(prev_net) * 100), 1) if prev_net else None
+    return {"delta": delta, "pct": pct, "since": prev.taken_on}
+
+
+def avg_monthly_gain(couple, months: int = 6) -> Decimal | None:
+    """Average month-over-month net-worth increase over the recent snapshots.
+
+    Uses up to `months` consecutive deltas; needs at least two snapshots.
+    Returns None when there isn't enough history.
+    """
+    snaps = history(couple)
+    if len(snaps) < 2:
+        return None
+    recent = snaps[-(months + 1):]
+    deltas = [
+        Decimal(str(b.net_worth_krw or 0)) - Decimal(str(a.net_worth_krw or 0))
+        for a, b in zip(recent, recent[1:])
+    ]
+    return sum(deltas, Decimal(0)) / len(deltas)
+
+
 def history(couple) -> list[AssetSnapshot]:
     return (
         AssetSnapshot.query.filter_by(couple_id=couple.id)

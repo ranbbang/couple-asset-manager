@@ -71,6 +71,11 @@ def _sync_snapshot() -> None:
     snapshots.refresh_current_month(current_user.couple, fx.get_cached_rate())
 
 
+def _won(value) -> str:
+    """₩-formatted amount for activity-feed detail lines."""
+    return f"₩{float(value):,.0f}"
+
+
 def _dec(value, default="0") -> Decimal:
     try:
         return Decimal(str(value).replace(",", "").strip() or default)
@@ -183,6 +188,7 @@ def create():
             current_user.couple_id, current_user,
             f"{current_user.display_name}님이 '{asset.name}' 자산을 추가했습니다.",
             icon=cat.icon,
+            detail=_won(asset.value_krw(fx.get_cached_rate())),
         )
         db.session.commit()
         _sync_snapshot()
@@ -207,6 +213,8 @@ def edit(asset_id: int):
             flash("최소 한 개의 보유 항목(현금 또는 주식)을 입력하세요.", "error")
             return render_template("assets/form.html", form=form, mode="edit",
                                    asset=asset, holdings_json=_holdings_json(asset))
+        rate = fx.get_cached_rate()
+        old_value = asset.value_krw(rate)
         asset.name = form.name.data.strip()
         asset.category_id = cat.id
         asset.owner_id = _resolve_owner_id(form)
@@ -216,10 +224,16 @@ def edit(asset_id: int):
         # Replace holdings wholesale (orphan-cleanup deletes the old rows).
         asset.holdings = holdings
         prices.refresh_holdings(holdings)
+        new_value = asset.value_krw(rate)
+        detail = (
+            f"{_won(old_value)} → {_won(new_value)}"
+            if new_value != old_value else None
+        )
         log_activity(
             current_user.couple_id, current_user,
             f"{current_user.display_name}님이 '{asset.name}' 자산을 수정했습니다.",
             icon="✏️",
+            detail=detail,
         )
         db.session.commit()
         _sync_snapshot()
@@ -242,11 +256,13 @@ def edit(asset_id: int):
 def delete(asset_id: int):
     asset = _get_owned_asset(asset_id)
     name = asset.name
+    old_value = asset.value_krw(fx.get_cached_rate())
     db.session.delete(asset)
     log_activity(
         current_user.couple_id, current_user,
         f"{current_user.display_name}님이 '{name}' 자산을 삭제했습니다.",
         icon="🗑️",
+        detail=_won(old_value),
     )
     db.session.commit()
     _sync_snapshot()
@@ -268,6 +284,46 @@ def refresh_prices():
     else:
         flash("업데이트할 주식 종목이 없거나 시세를 불러오지 못했습니다.", "info")
     return redirect(url_for("assets.index"))
+
+
+@assets_bp.route("/export.csv")
+@login_required
+@couple_required
+def export_csv():
+    """Download every account/holding as CSV (Excel-friendly, UTF-8 BOM)."""
+    import csv
+    import io
+    from datetime import date
+
+    from flask import Response
+    from sqlalchemy.orm import selectinload
+
+    rate = fx.get_cached_rate()
+    assets = (
+        Asset.query.filter_by(couple_id=current_user.couple_id)
+        .options(selectinload(Asset.holdings), selectinload(Asset.category))
+        .all()
+    )
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(["계좌명", "카테고리", "소유자", "기관", "종류", "항목",
+                "통화", "수량", "현재가", "원화 평가액", "통계 제외"])
+    for a in sorted(assets, key=lambda x: x.category_name):
+        for h in a.holdings:
+            w.writerow([
+                a.name, a.category_name, a.owner_label, a.institution or "",
+                "주식" if h.is_stock else "현금", h.display_name, h.currency,
+                float(h.quantity) if h.is_stock else "",
+                float(h.cached_price) if (h.is_stock and h.cached_price) else "",
+                round(float(h.value_krw(rate))),
+                "Y" if a.exclude_from_stats else "",
+            ])
+    return Response(
+        "﻿" + buf.getvalue(),
+        mimetype="text/csv; charset=utf-8",
+        headers={"Content-Disposition":
+                 f"attachment; filename=assets_{date.today().isoformat()}.csv"},
+    )
 
 
 def _holdings_json(asset: Asset) -> str:

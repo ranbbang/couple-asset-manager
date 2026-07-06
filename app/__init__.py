@@ -51,8 +51,31 @@ def create_app(config_class: type = Config) -> Flask:
 
     with app.app_context():
         db.create_all()
+        _apply_micro_migrations()
 
     return app
+
+
+def _apply_micro_migrations() -> None:
+    """Additive schema fixes create_all can't do (it never ALTERs tables).
+
+    SQLite only; each entry is (table, column, DDL type+default).
+    """
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    wanted = [
+        ("activity_logs", "detail", "VARCHAR(255)"),
+    ]
+    for table, column, ddl in wanted:
+        if not inspector.has_table(table):
+            continue
+        existing = {c["name"] for c in inspector.get_columns(table)}
+        if column not in existing:
+            db.session.execute(
+                text(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+            )
+            db.session.commit()
 
 
 def register_template_helpers(app: Flask) -> None:

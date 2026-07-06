@@ -29,6 +29,7 @@
         </div>
         <div class="goal-meta">
           <span>{{ (v.current if v else 0) | won_short }} / {{ goal.target_amount | won_short }}</span>
+          {% if v and v.eta %}<span class="eta">📅 이 속도면 {{ v.eta.strftime('%Y년 %m월') }} 달성 예상</span>{% endif %}
         </div>
         {% if v and v.linked %}
           <div class="goal-meta" style="flex-wrap:wrap; gap:6px;">

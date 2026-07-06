@@ -17,6 +17,7 @@
         <div class="ic">{{ entry.icon }}</div>
         <div style="flex:1;">
           <div>{{ entry.action }}</div>
+          {% if entry.detail %}<div class="feed-detail">{{ entry.detail }}</div>{% endif %}
           <time class="when" data-ts="{{ entry.created_at.isoformat() }}Z">{{ entry.created_at.strftime('%Y-%m-%d %H:%M') }}</time>
         </div>
       </div>

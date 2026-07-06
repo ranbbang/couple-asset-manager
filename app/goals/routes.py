@@ -8,7 +8,7 @@ from ..decorators import couple_required
 from ..extensions import db
 from ..models import Goal
 from ..services import categories as categories_svc
-from ..services import fx, goals as goals_svc
+from ..services import fx, goals as goals_svc, snapshots
 from ..services.activity import log_activity
 from ..services.finance import _is_liability
 from .forms import GoalForm
@@ -38,7 +38,11 @@ def _populate_links(form: GoalForm) -> None:
 
 def _goal_views(goals):
     rate = fx.get_cached_rate()
-    return {g.id: goals_svc.goal_view(g, current_user.couple, rate) for g in goals}
+    monthly_gain = snapshots.avg_monthly_gain(current_user.couple)
+    return {
+        g.id: goals_svc.goal_view(g, current_user.couple, rate, monthly_gain)
+        for g in goals
+    }
 
 
 @goals_bp.route("/")

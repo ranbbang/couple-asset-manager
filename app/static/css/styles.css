@@ -164,6 +164,16 @@ small { color: var(--ink-soft); }
 }
 .user-menu .menu .logout-form .linklike:hover { background: var(--surface-2); color: var(--ink); }
 
+/* ----- MoM badge / feed detail / goal ETA -------------------------------- */
+.mom-badge {
+  display: inline-block; margin-top: 6px; padding: 3px 9px; border-radius: 999px;
+  font-size: 0.76rem; font-weight: 700;
+}
+.mom-badge.up { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.mom-badge.down { color: var(--rose); background: color-mix(in srgb, var(--rose) 12%, transparent); }
+.feed-detail { color: var(--ink-faint); font-size: 0.8rem; margin-top: 2px; }
+.goal-meta .eta { color: var(--ink-faint); font-size: 0.78rem; }
+
 /* ====== PAGE ============================================================= */
 .page { min-height: calc(100vh - 56px); padding: 40px 28px 72px; }
 .page-inner { max-width: 1200px; margin: 0 auto; }

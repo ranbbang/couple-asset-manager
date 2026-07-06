@@ -33,6 +33,12 @@
     <div class="label">순자산 (Net Worth)</div>
     <div class="value {{ 'pos' if summary.net_worth >= 0 else 'neg' }}" data-countup="{{ summary.net_worth }}" data-prefix="₩">{{ summary.net_worth | won }}</div>
     <div class="amt-sub">{{ summary.net_worth | won_short }}</div>
+    {% if mom %}
+      <div class="mom-badge {{ 'up' if mom.delta >= 0 else 'down' }}">
+        {{ '▲' if mom.delta >= 0 else '▼' }} 지난달 대비
+        {{ '+' if mom.delta >= 0 else '−' }}{{ mom.delta | abs | won }}{% if mom.pct is not none %} ({{ '+' if mom.pct >= 0 }}{{ mom.pct }}%){% endif %}
+      </div>
+    {% endif %}
   </div>
   <div class="card stat net">
     <div class="chip">🏡</div>
@@ -94,6 +100,7 @@
             <div class="progress"><span style="width:{{ v.pct if v else 0 }}%;"></span></div>
             <div class="goal-meta">
               <span><b>{{ (v.current if v else 0) | won }}</b> / {{ goal.target_amount | won }}</span>
+              {% if v and v.eta %}<span class="eta">📅 {{ v.eta.strftime('%Y년 %m월') }} 달성 예상</span>{% endif %}
             </div>
           </div>
         {% endfor %}
@@ -119,6 +126,7 @@
               <div class="ic">{{ entry.icon }}</div>
               <div style="flex:1;">
                 <div>{{ entry.action }}</div>
+                {% if entry.detail %}<div class="feed-detail">{{ entry.detail }}</div>{% endif %}
                 <time class="when" data-ts="{{ entry.created_at.isoformat() }}Z">{{ entry.created_at.strftime('%m/%d %H:%M') }}</time>
               </div>
             </div>

@@ -333,6 +333,8 @@ class ActivityLog(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
     action = db.Column(db.String(255), nullable=False)
+    # Optional extra line, e.g. an amount change: "₩5,000,000 → ₩5,500,000".
+    detail = db.Column(db.String(255), nullable=True)
     icon = db.Column(db.String(8), nullable=False, default="•")
     created_at = db.Column(
         db.DateTime, default=datetime.utcnow, nullable=False, index=True

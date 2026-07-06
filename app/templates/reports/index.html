@@ -8,10 +8,13 @@
     <h1>자산 리포트 📈</h1>
     <div class="sub">시간에 따른 순자산·자산 구성 변화를 한눈에 확인하세요.</div>
   </div>
-  <form method="post" action="{{ url_for('reports.record_snapshot') }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <button type="submit" class="btn btn-primary">📸 이번 달 스냅샷 기록</button>
-  </form>
+  <div style="display:flex; gap:8px;">
+    <a href="{{ url_for('reports.export_csv') }}" class="btn btn-ghost">⬇ CSV 내보내기</a>
+    <form method="post" action="{{ url_for('reports.record_snapshot') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary">📸 이번 달 스냅샷 기록</button>
+    </form>
+  </div>
 </div>
 
 {% if not report.hasData %}

@@ -15,6 +15,7 @@
       <button type="submit" class="btn btn-ghost">🔄 가격 새로고침</button>
     </form>
     {% endif %}
+    <a href="{{ url_for('assets.export_csv') }}" class="btn btn-ghost">⬇ CSV 내보내기</a>
     <a href="{{ url_for('assets.create') }}" class="btn btn-primary">＋ 자산 추가</a>
   </div>
 </div>
