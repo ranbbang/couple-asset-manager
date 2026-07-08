@@ -1,8 +1,48 @@
 /* =========================================================================
    우리집 자산관리 — design system  (throxy-inspired: warm dark canvas, cream
-   top navbar, sage-green accent, Switzer/Pretendard/JetBrains Mono).
+   top navbar, sage-green accent, Switzer/SCDream/JetBrains Mono).
    Top horizontal nav (no sidebar). Legacy var names kept & remapped.
    ========================================================================= */
+
+/* ----- SCDream (에스코어드림) — Korean text font --------------------------
+   S-Core's free font (commercial use permitted). Prefers a locally installed
+   copy, falls back to the noonnu-hosted webfonts. Weight map: the family
+   ships 1Thin~9Black; we register only the weights this app actually uses. */
+@font-face {
+  font-family: "SCDream";
+  font-weight: 300;
+  font-display: swap;
+  src: local("S-Core Dream 3Light"), local("S-CoreDream-3Light"),
+       url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-3Light.woff") format("woff");
+}
+@font-face {
+  font-family: "SCDream";
+  font-weight: 400;
+  font-display: swap;
+  src: local("S-Core Dream 4Regular"), local("S-CoreDream-4Regular"),
+       url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-4Regular.woff") format("woff");
+}
+@font-face {
+  font-family: "SCDream";
+  font-weight: 500;
+  font-display: swap;
+  src: local("S-Core Dream 5Medium"), local("S-CoreDream-5Medium"),
+       url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-5Medium.woff") format("woff");
+}
+@font-face {
+  font-family: "SCDream";
+  font-weight: 600;
+  font-display: swap;
+  src: local("S-Core Dream 6Bold"), local("S-CoreDream-6Bold"),
+       url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-6Bold.woff") format("woff");
+}
+@font-face {
+  font-family: "SCDream";
+  font-weight: 700;
+  font-display: swap;
+  src: local("S-Core Dream 7ExtraBold"), local("S-CoreDream-7ExtraBold"),
+       url("https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/S-CoreDream-7ExtraBold.woff") format("woff");
+}
 
 :root {
   /* warm dark canvas */
@@ -46,9 +86,9 @@
   --shadow:    0 24px 60px -30px rgba(0, 0, 0, 0.85);
   --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.02);
 
-  --font:         "Switzer", "Pretendard", -apple-system, BlinkMacSystemFont,
+  --font:         "Switzer", "SCDream", -apple-system, BlinkMacSystemFont,
                   "Segoe UI", "Apple SD Gothic Neo", sans-serif;
-  --font-display: "Switzer", "Pretendard", -apple-system, BlinkMacSystemFont,
+  --font-display: "Switzer", "SCDream", -apple-system, BlinkMacSystemFont,
                   "Segoe UI", sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
