@@ -32,7 +32,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="field">
       <label for="monthly-expense">월 생활비 (₩)</label>
-      <input type="text" inputmode="numeric" id="monthly-expense" name="monthly_expense"
+      <input type="text" inputmode="numeric" data-comma="1" id="monthly-expense" name="monthly_expense"
              value="{{ couple.monthly_expense_krw | int if couple.monthly_expense_krw else '' }}"
              placeholder="예) 3000000">
       <div class="rate-note">입력하면 대시보드에 유동자산이 생활비 몇 개월치인지 표시됩니다.</div>

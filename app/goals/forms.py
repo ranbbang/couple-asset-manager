@@ -28,7 +28,7 @@ class GoalForm(FlaskForm):
         "목표 금액 (₩)",
         places=0,
         validators=[DataRequired(), NumberRange(min=1, message="1 이상으로 입력하세요.")],
-        render_kw={"placeholder": "0", "min": "1", "step": "1"},
+        render_kw={"placeholder": "0", "inputmode": "numeric", "data-comma": "1"},
     )
     owner = SelectField("목표 주체", validators=[DataRequired()])
     # Auto-linked sources (choices populated in the route).
@@ -39,11 +39,11 @@ class GoalForm(FlaskForm):
     saved_amount = DecimalField(
         "현재 저축액 (₩) — 수동",
         places=0, validators=[Optional(), NumberRange(min=0)], default=0,
-        render_kw={"placeholder": "0", "min": "0", "step": "1"},
+        render_kw={"placeholder": "0", "inputmode": "numeric", "data-comma": "1"},
     )
     stocks_amount = DecimalField(
         "현재 투자액 (₩) — 수동",
         places=0, validators=[Optional(), NumberRange(min=0)], default=0,
-        render_kw={"placeholder": "0", "min": "0", "step": "1"},
+        render_kw={"placeholder": "0", "inputmode": "numeric", "data-comma": "1"},
     )
     submit = SubmitField("저장")

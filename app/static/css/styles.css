@@ -281,10 +281,12 @@ small { color: var(--ink-soft); }
 .alloc-num { font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) {
   .alloc-row { grid-template-columns: 1fr 1fr; }
+  .alloc-diff { grid-column: 1 / -1; }
 }
 
 /* ====== PAGE ============================================================= */
-.page { min-height: calc(100vh - 56px); padding: 40px 28px 72px; }
+.page { min-height: calc(100vh - 56px);
+  padding: 40px 28px calc(72px + env(safe-area-inset-bottom, 0px)); }
 .page-inner { max-width: 1200px; margin: 0 auto; }
 
 .topbar {
@@ -504,7 +506,8 @@ small { color: var(--ink-soft); }
 
 /* ----- auth / centered pages ------------------------------------------- */
 .center-wrap {
-  min-height: 100vh; display: grid; place-items: center; padding: 24px;
+  min-height: 100vh; min-height: 100dvh; /* mobile URL-bar safe */
+  display: grid; place-items: center; padding: 24px;
   background: radial-gradient(900px 500px at 50% -10%, rgba(157, 190, 138, 0.08), transparent 70%), var(--bg);
 }
 .auth-card { width: 100%; max-width: 420px; }
@@ -624,6 +627,9 @@ small { color: var(--ink-soft); }
   .hero { flex-direction: column; align-items: stretch; padding: 22px; }
   .hero-spark { width: 100%; }
   .spark-cap { text-align: left; }
+  /* live-note follows the stacked (left-aligned) topbar */
+  .topbar > div:last-child { align-items: flex-start !important; }
+  .live-note { align-items: flex-start; text-align: left; }
 }
 
 /* phones */
@@ -633,8 +639,19 @@ small { color: var(--ink-soft); }
   .donut { width: 160px; height: 160px; }
   .card { padding: 18px; }
   .btn { padding: 11px 18px; }        /* comfortable touch target */
+  .btn-sm { padding: 10px 15px; font-size: 0.84rem; }
+  .icon-btn { width: 40px; height: 40px; }
   .nav-links a { padding: 11px 12px; }
   .owner-table { font-size: 0.84rem; }
+
+  /* iOS zooms any focused input under 16px — keep form controls at 16px */
+  .field input, .field select, .field textarea,
+  .holding-row input, .holding-row select, .alloc-row input { font-size: 16px; }
+
+  /* account rows: let amount + actions wrap instead of cramming one line */
+  .acct-row { flex-wrap: wrap; }
+  .acct-row > div[style*="text-align:right"] { text-align: left !important; }
+  .acct-row .row-actions { width: 100%; justify-content: flex-end; }
 }
 
 /* horizontal-scroll guard for data tables on narrow screens */

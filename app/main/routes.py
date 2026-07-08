@@ -122,6 +122,16 @@ def _donut_stops(breakdown) -> str | None:
     return ", ".join(stops)
 
 
+@main_bp.route("/sw.js")
+def service_worker():
+    """Serve the service worker from the site root so its scope covers '/'."""
+    from flask import current_app
+
+    resp = current_app.send_static_file("sw.js")
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @main_bp.route("/api/fx-rate")
 @login_required
 def fx_rate():

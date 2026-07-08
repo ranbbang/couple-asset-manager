@@ -117,6 +117,38 @@ function setupUserMenu() {
   });
 }
 
+// --- live thousands separators on money inputs ----------------------------
+// Inputs opt in with data-comma="1". Commas are stripped again on submit so
+// the server-side parsers (WTForms DecimalField, int()) see a plain number.
+function setupCommaInputs() {
+  const inputs = document.querySelectorAll('input[data-comma]');
+  if (!inputs.length) return;
+  const format = (el) => {
+    const digits = el.value.replace(/[^\d]/g, "");
+    el.value = digits ? Number(digits).toLocaleString("ko-KR") : "";
+  };
+  inputs.forEach((el) => {
+    format(el); // format any server-rendered initial value
+    el.addEventListener("input", () => format(el));
+    if (el.form && !el.form.dataset.commaHooked) {
+      el.form.dataset.commaHooked = "1";
+      el.form.addEventListener("submit", () => {
+        el.form.querySelectorAll('input[data-comma]').forEach((f) => {
+          f.value = f.value.replace(/,/g, "");
+        });
+      });
+    }
+  });
+}
+
+// --- PWA service worker ----------------------------------------------------
+// Registration only succeeds on secure contexts (HTTPS or localhost); on
+// plain LAN HTTP the call silently no-ops, which is fine.
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.register("/sw.js").catch(() => {});
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("time[data-ts]").forEach((el) => {
     el.textContent = relativeTime(el.dataset.ts);
@@ -138,6 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
   setupUserMenu();
   tagReveals();
   setupReveal();
+  setupCommaInputs();
+  registerServiceWorker();
 
   // Count-ups not inside a reveal target (e.g. above the fold) run immediately.
   document.querySelectorAll("[data-countup]").forEach((el) => {
