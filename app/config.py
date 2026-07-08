@@ -8,10 +8,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-# Load .env if present (no-op in production where real env vars are set).
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load .env if present (absolute path so it also works when launched from a
+# scheduled task whose working directory isn't the project root).
+load_dotenv(BASE_DIR / ".env")
 
 
 class Config:
