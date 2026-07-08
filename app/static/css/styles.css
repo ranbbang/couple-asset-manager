@@ -71,7 +71,12 @@
   --lilac:       #9DBE8A;
   --lilac-soft:  rgba(157, 190, 138, 0.15);
 
-  /* semantic */
+  /* semantic — COLOR PRINCIPLE:
+     green/rose mark CHANGE or VALENCE of net worth (up/down, +/−),
+     never the mere existence of debt (liabilities render neutral ink
+     with an amber "부채" tag). Report-group colors in constants.py
+     (REPORT_GROUPS) are the base palette; category colors should stay
+     within that family for cross-page consistency. */
   --pos:       #9DBE8A;
   --neg:       #D98C77;
   --sage:      #9DBE8A;
@@ -291,6 +296,59 @@ small { color: var(--ink-soft); }
 .stat.net .value { color: var(--accent); }
 .stat.net .chip { background: var(--accent-dim); border-color: transparent; }
 
+/* ----- dashboard hero (net worth) ---------------------------------------- */
+.hero {
+  display: flex; align-items: center; justify-content: space-between; gap: 28px;
+  margin-bottom: 16px; padding: 28px;
+  border-color: rgba(157, 190, 138, 0.3);
+  background: linear-gradient(150deg, var(--surface), rgba(157, 190, 138, 0.07));
+}
+.hero .label {
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--ink-faint); font-size: 0.7rem; font-weight: 600;
+}
+.hero .value {
+  font-family: var(--font-display); font-size: 2.9rem; font-weight: 400;
+  letter-spacing: -0.035em; margin-top: 10px; line-height: 1.1;
+  color: var(--accent); font-variant-numeric: tabular-nums;
+}
+.hero .value.neg { color: var(--neg); }
+.hero-sub { color: var(--ink-soft); font-size: 0.95rem; margin-top: 6px;
+  font-variant-numeric: tabular-nums; }
+.hero-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.hero-badges .mom-badge { margin-top: 0; }
+.flow-note { color: var(--ink-faint); font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.hero-spark { flex: 0 0 auto; width: 220px; }
+.hero-spark svg { display: block; width: 100%; height: 56px; overflow: visible; }
+.spark-cap { color: var(--ink-faint); font-size: 0.68rem; margin-top: 6px; text-align: right;
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* secondary stat row under the hero */
+.stat-row { margin-bottom: 22px; }
+.stat.sm { padding: 18px 20px; }
+.value-sm { font-family: var(--font-display); font-size: 1.45rem; font-weight: 500;
+  letter-spacing: -0.02em; margin-top: 8px; font-variant-numeric: tabular-nums; }
+
+/* ----- donut chart (category composition) -------------------------------- */
+.donut-wrap { display: grid; place-items: center; padding: 18px 0 22px; }
+.donut {
+  width: 190px; height: 190px; border-radius: 50%;
+  display: grid; place-items: center; position: relative;
+}
+.donut::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+.donut-center {
+  width: 62%; height: 62%; border-radius: 50%; background: var(--surface);
+  display: grid; place-content: center; text-align: center; gap: 2px;
+  box-shadow: 0 0 0 1px var(--line-soft);
+}
+.donut-center .dc-label { color: var(--ink-faint); font-size: 0.68rem;
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; }
+.donut-center b { font-family: var(--font-display); font-size: 1.06rem; font-weight: 600;
+  color: var(--ink); font-variant-numeric: tabular-nums; }
+
 /* ----- breakdown -------------------------------------------------------- */
 .breakdown-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
 .breakdown-row:last-child { border-bottom: 0; }
@@ -306,7 +364,7 @@ small { color: var(--ink-soft); }
   font-family: var(--font-display); font-variant-numeric: tabular-nums; }
 .bar { height: 5px; border-radius: 99px; background: var(--surface-2); margin-top: 7px; overflow: hidden; }
 .bar > span { display: block; height: 100%; border-radius: 99px; }
-.tag-liability { color: var(--neg); font-size: 0.66rem; font-weight: 700;
+.tag-liability { color: var(--amber); font-size: 0.66rem; font-weight: 700;
   font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; }
 
 /* ----- goals ------------------------------------------------------------ */
@@ -314,8 +372,10 @@ small { color: var(--ink-soft); }
 .goal-card .pct { font-family: var(--font-display); font-weight: 600; color: var(--accent); }
 .goal-meta { display: flex; gap: 18px; color: var(--ink-soft); font-size: 0.84rem; margin-top: 10px; font-variant-numeric: tabular-nums; }
 .goal-meta b { color: var(--ink); font-weight: 600; }
-.progress { height: 8px; border-radius: 99px; background: var(--surface-2); margin: 12px 0 4px; overflow: hidden; }
-.progress > span { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.progress { height: 10px; border-radius: 99px; background: var(--surface-2); margin: 12px 0 4px; overflow: hidden; }
+.progress > span { display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 75%, transparent), var(--accent));
+  transition: width 0.5s cubic-bezier(0.2, 0.7, 0.2, 1); }
 
 /* ----- lists ------------------------------------------------------------ */
 .asset-group { margin-bottom: 26px; }
@@ -336,7 +396,9 @@ small { color: var(--ink-soft); }
 }
 .list-row .spacer { flex: 1; }
 .list-row .amt { font-weight: 500; font-family: var(--font-display); font-variant-numeric: tabular-nums; }
-.list-row .amt.neg { color: var(--neg); }
+/* Color principle: red marks negative CHANGE, not the mere presence of debt.
+   Liability amounts stay neutral ink; the "부채" tag carries the meaning. */
+.list-row .amt.neg { color: var(--ink); }
 .row-actions { display: flex; gap: 6px; }
 
 /* ----- activity feed ---------------------------------------------------- */
@@ -456,9 +518,9 @@ small { color: var(--ink-soft); }
 /* ----- v4 additions: holdings, ratio bar, sub-labels ------------------- */
 .grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
 
-/* small "몇억 몇만" sub-label under amounts */
-.amt-sub { color: var(--ink-faint); font-size: 0.74rem; font-family: var(--font-mono);
-  letter-spacing: 0.02em; margin-top: 3px; }
+/* small "몇억 몇만" sub-label under amounts (Korean text — not mono) */
+.amt-sub { color: var(--ink-faint); font-size: 0.76rem; font-family: var(--font);
+  letter-spacing: 0.01em; margin-top: 3px; font-variant-numeric: tabular-nums; }
 .share-tag { font-size: 0.74rem; font-weight: 700; font-family: var(--font-mono); margin-left: 6px; }
 
 /* account holdings mini-breakdown on the asset list */
@@ -517,7 +579,25 @@ small { color: var(--ink-soft); }
   .form-row { grid-template-columns: 1fr; }
   .topbar, .page-head { flex-direction: column; align-items: flex-start; }
   h1 { font-size: 1.7rem; }
+  .hero { flex-direction: column; align-items: stretch; padding: 22px; }
+  .hero-spark { width: 100%; }
+  .spark-cap { text-align: left; }
 }
+
+/* phones */
+@media (max-width: 560px) {
+  .hero .value { font-size: 2.2rem; }
+  .stat .value { font-size: 1.7rem; }
+  .donut { width: 160px; height: 160px; }
+  .card { padding: 18px; }
+  .btn { padding: 11px 18px; }        /* comfortable touch target */
+  .nav-links a { padding: 11px 12px; }
+  .owner-table { font-size: 0.84rem; }
+}
+
+/* horizontal-scroll guard for data tables on narrow screens */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll table { min-width: 420px; }
 
 /* respect reduced motion */
 @media (prefers-reduced-motion: reduce) {

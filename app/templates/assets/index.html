@@ -24,6 +24,7 @@
 {% if owner_rows %}
 <div class="card" style="margin-bottom:22px;">
   <h2>명의별 요약</h2>
+  <div class="table-scroll">
   <table class="owner-table">
     <thead>
       <tr><th>명의</th><th>자산</th><th>부채</th><th>순자산</th></tr>
@@ -39,6 +40,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
 {% endif %}
 

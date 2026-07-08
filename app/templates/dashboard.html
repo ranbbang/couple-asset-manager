@@ -14,49 +14,70 @@
   <a href="{{ url_for('assets.create') }}" class="btn btn-primary">＋ 자산 추가</a>
 </div>
 
-{# ---- headline stats ---- #}
-<div class="grid cols-4" style="margin-bottom:22px;">
-  <div class="card stat assets">
-    <div class="chip">📊</div>
+{# ---- hero: net worth ---- #}
+<div class="card hero">
+  <div class="hero-main">
+    <div class="label">순자산 · NET WORTH</div>
+    <div class="value {{ 'pos' if summary.net_worth >= 0 else 'neg' }}" data-countup="{{ summary.net_worth }}" data-prefix="₩">{{ summary.net_worth | won }}</div>
+    <div class="hero-sub">{{ summary.net_worth | won_short }}</div>
+    <div class="hero-badges">
+      {% if mom %}
+        <span class="mom-badge {{ 'up' if mom.delta >= 0 else 'down' }}">
+          {{ '▲' if mom.delta >= 0 else '▼' }} 지난달 대비
+          {{ '+' if mom.delta >= 0 else '−' }}{{ mom.delta | abs | won }}{% if mom.pct is not none %} ({{ '+' if mom.pct >= 0 }}{{ mom.pct }}%){% endif %}
+        </span>
+      {% endif %}
+      {% if flow %}
+        <span class="flow-note">현금성 {{ '+' if flow.cash >= 0 else '−' }}{{ flow.cash | abs | won_short }} · 투자 {{ '+' if flow.invest >= 0 else '−' }}{{ flow.invest | abs | won_short }}</span>
+      {% endif %}
+    </div>
+  </div>
+  {% if spark_points %}
+  <div class="hero-spark" aria-hidden="true">
+    <svg viewBox="0 0 220 56" preserveAspectRatio="none">
+      <polyline points="{{ spark_points }}" fill="none" stroke="var(--accent)"
+                stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="spark-cap">월별 순자산 추이</div>
+  </div>
+  {% endif %}
+</div>
+
+{# ---- secondary stats ---- #}
+<div class="grid cols-3 stat-row">
+  <div class="card stat sm">
     <div class="label">총 자산</div>
-    <div class="value pos" data-countup="{{ summary.total_assets }}" data-prefix="₩">{{ summary.total_assets | won }}</div>
-    <div class="amt-sub">{{ summary.total_assets | won_short }}</div>
+    <div class="value-sm">{{ summary.total_assets | won_short }}</div>
+    <div class="amt-sub">{{ summary.total_assets | won }}</div>
     <div class="amt-sub">💧 유동 {{ summary.liquid | won_short }}{% if liquid_months is not none %} · 생활비 {{ liquid_months }}개월치{% endif %}{% if summary.usd.pct is not none %} · $ 비중 {{ summary.usd.pct }}%{% endif %}</div>
   </div>
-  <div class="card stat debts">
-    <div class="chip">💢</div>
+  <div class="card stat sm">
     <div class="label">총 부채</div>
-    <div class="value neg" data-countup="{{ summary.total_liabilities }}" data-prefix="₩">{{ summary.total_liabilities | won }}</div>
-    <div class="amt-sub">{{ summary.total_liabilities | won_short }}</div>
+    <div class="value-sm">{{ summary.total_liabilities | won_short }}</div>
+    <div class="amt-sub">{{ summary.total_liabilities | won }}</div>
   </div>
-  <div class="card stat net">
-    <div class="chip">💜</div>
-    <div class="label">순자산 (Net Worth)</div>
-    <div class="value {{ 'pos' if summary.net_worth >= 0 else 'neg' }}" data-countup="{{ summary.net_worth }}" data-prefix="₩">{{ summary.net_worth | won }}</div>
-    <div class="amt-sub">{{ summary.net_worth | won_short }}</div>
-    {% if mom %}
-      <div class="mom-badge {{ 'up' if mom.delta >= 0 else 'down' }}">
-        {{ '▲' if mom.delta >= 0 else '▼' }} 지난달 대비
-        {{ '+' if mom.delta >= 0 else '−' }}{{ mom.delta | abs | won }}{% if mom.pct is not none %} ({{ '+' if mom.pct >= 0 }}{{ mom.pct }}%){% endif %}
-      </div>
-    {% endif %}
-    {% if flow %}
-      <div class="amt-sub">현금성 {{ '+' if flow.cash >= 0 else '−' }}{{ flow.cash | abs | won_short }} · 투자 {{ '+' if flow.invest >= 0 else '−' }}{{ flow.invest | abs | won_short }}</div>
-    {% endif %}
-  </div>
-  <div class="card stat net">
-    <div class="chip">🏡</div>
+  <div class="card stat sm">
     <div class="label">부동산 제외 순자산</div>
-    <div class="value {{ 'pos' if summary.net_worth_excl_re >= 0 else 'neg' }}" data-countup="{{ summary.net_worth_excl_re }}" data-prefix="₩">{{ summary.net_worth_excl_re | won }}</div>
-    <div class="amt-sub">{{ summary.net_worth_excl_re | won_short }} · 부동산 {{ summary.real_estate | won_short }}</div>
+    <div class="value-sm">{{ summary.net_worth_excl_re | won_short }}</div>
+    <div class="amt-sub">부동산 {{ summary.real_estate | won_short }}</div>
   </div>
 </div>
 
 <div class="grid cols-2">
-  {# ---- category breakdown ---- #}
+  {# ---- category composition: donut + list ---- #}
   <div class="card">
-    <h2>카테고리별 구성</h2>
+    <h2>카테고리 구성</h2>
     {% if summary.breakdown %}
+      {% if donut_css %}
+      <div class="donut-wrap" aria-hidden="true">
+        <div class="donut" style="background: conic-gradient({{ donut_css }});">
+          <div class="donut-center">
+            <span class="dc-label">총 자산</span>
+            <b>{{ summary.total_assets | won_short }}</b>
+          </div>
+        </div>
+      </div>
+      {% endif %}
       {% for row in summary.breakdown %}
         <div class="breakdown-row">
           <div class="ic" style="background:{{ row.color }}1f;">{{ row.icon }}</div>
@@ -69,7 +90,7 @@
               <div class="bar"><span style="width:{{ row.share }}%; background:{{ row.color }};"></span></div>
             {% endif %}
           </div>
-          <div class="amount" style="{{ 'color:var(--rose);' if row.is_liability }}">
+          <div class="amount">
             {{ '−' if row.is_liability }}{{ row.amount | won }}
             <div class="amt-sub">{{ row.amount | won_short }}</div>
           </div>
@@ -118,11 +139,11 @@
       {% endif %}
     </div>
 
-    {# ---- recent activity ---- #}
+    {# ---- recent activity (3건 + 더 보기) ---- #}
     <div class="card">
       <div style="display:flex; justify-content:space-between; align-items:center;">
         <h2 style="margin:0;">최근 활동 📜</h2>
-        <a href="{{ url_for('main.activity') }}" class="pill">전체 보기</a>
+        <a href="{{ url_for('main.activity') }}" class="pill">더 보기</a>
       </div>
       {% if recent %}
         <div style="margin-top:8px;">

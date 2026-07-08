@@ -55,9 +55,16 @@ def dashboard():
     recent = (
         ActivityLog.query.filter_by(couple_id=couple.id)
         .order_by(ActivityLog.created_at.desc())
-        .limit(6)
+        .limit(3)
         .all()
     )
+
+    # Net-worth sparkline (last 12 monthly snapshots) as SVG polyline points.
+    spark_points = _spark_points(
+        [float(s.net_worth_krw) for s in snapshots.history(couple)][-12:]
+    )
+    # Donut segments for the category composition chart (non-liability only).
+    donut_css = _donut_stops(summary["breakdown"])
     partner = couple.partner_of(current_user)
     return render_template(
         "dashboard.html",
@@ -71,7 +78,39 @@ def dashboard():
         mom=mom,
         flow=flow,
         liquid_months=liquid_months,
+        spark_points=spark_points,
+        donut_css=donut_css,
     )
+
+
+def _spark_points(values, width: int = 220, height: int = 56) -> str | None:
+    """Normalise a value series into SVG polyline points (needs >= 2 points)."""
+    if len(values) < 2:
+        return None
+    lo, hi = min(values), max(values)
+    rng = (hi - lo) or 1.0
+    step = width / (len(values) - 1)
+    pad = 4  # keep the line inside the viewBox
+    return " ".join(
+        f"{i * step:.1f},{height - pad - (v - lo) / rng * (height - pad * 2):.1f}"
+        for i, v in enumerate(values)
+    )
+
+
+def _donut_stops(breakdown) -> str | None:
+    """conic-gradient stops for the asset-composition donut."""
+    stops, start = [], 0.0
+    for row in breakdown:
+        if row["is_liability"] or not row["share"]:
+            continue
+        end = min(start + row["share"], 100.0)
+        stops.append(f"{row['color']} {start:.1f}% {end:.1f}%")
+        start = end
+    if not stops:
+        return None
+    if start < 100:
+        stops.append(f"var(--surface-2) {start:.1f}% 100%")
+    return ", ".join(stops)
 
 
 @main_bp.route("/api/fx-rate")
