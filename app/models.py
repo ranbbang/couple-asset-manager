@@ -206,6 +206,21 @@ class Asset(db.Model):
                 seen.append(h.currency)
         return seen
 
+    @property
+    def price_age_days(self) -> int | None:
+        """Age (days) of the OLDEST stock quote in this account, or None.
+
+        None means the account has no priced stock holdings; 0 means every
+        quote was refreshed today. Drives the 시세 freshness pill.
+        """
+        stamps = [
+            h.cached_price_at for h in self.holdings
+            if h.kind == "stock" and h.cached_price_at is not None
+        ]
+        if not stamps:
+            return None
+        return max((datetime.utcnow() - min(stamps)).days, 0)
+
 
 class Holding(db.Model):
     """One line inside an account: cash in a currency, or a stock position.

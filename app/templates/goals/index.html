@@ -1,4 +1,5 @@
 {% extends "shell.html" %}
+{% from "_ui.html" import avatar, status_pill %}
 {% block title %}목표 · {{ APP_NAME }}{% endblock %}
 
 {% block content %}
@@ -17,9 +18,13 @@
       {% set v = views.get(goal.id) %}
       <div class="card goal-card">
         <div class="top">
-          <h2 style="margin:0;">{{ goal.name }}
-            <span class="pill" style="margin-left:6px;">{{ '🙋 ' + goal.owner.display_name if goal.owner else '🤝 공동' }}</span>
-            {% if v and v.linked %}<span class="pill" style="margin-left:6px;">🔗 자동 연동</span>{% endif %}
+          <h2 class="avatar-name" style="margin:0;">{{ goal.name }}
+            {% if goal.owner %}{{ avatar(goal.owner.display_name, current_user.couple.members.index(goal.owner), 'sm') }}
+            {% else %}{{ avatar('공동', None, 'sm') }}{% endif %}
+            {% if v and v.status == 'done' %}{{ status_pill('달성 🎉', 'ok') }}
+            {% elif v and v.status == 'on_track' %}{{ status_pill('순항', 'ok') }}
+            {% elif v and v.status == 'stalled' %}{{ status_pill('정체', 'warn') }}{% endif %}
+            {% if v and v.linked %}<span class="pill">🔗 자동 연동</span>{% endif %}
           </h2>
           <span class="pct">{{ v.pct if v else 0 }}%</span>
         </div>

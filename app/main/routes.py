@@ -1,4 +1,6 @@
 """Main routes: home redirect, dashboard, and activity feed."""
+from datetime import datetime, timedelta
+
 from flask import Blueprint, redirect, render_template, url_for
 from flask_login import current_user, login_required
 
@@ -65,6 +67,11 @@ def dashboard():
     )
     # Donut segments for the category composition chart (non-liability only).
     donut_css = _donut_stops(summary["breakdown"])
+    # Live-note counter: household activity in the last 7 days.
+    week_count = ActivityLog.query.filter(
+        ActivityLog.couple_id == couple.id,
+        ActivityLog.created_at >= datetime.utcnow() - timedelta(days=7),
+    ).count()
     partner = couple.partner_of(current_user)
     return render_template(
         "dashboard.html",
@@ -80,6 +87,8 @@ def dashboard():
         liquid_months=liquid_months,
         spark_points=spark_points,
         donut_css=donut_css,
+        week_count=week_count,
+        cached_rate=rate,
     )
 
 

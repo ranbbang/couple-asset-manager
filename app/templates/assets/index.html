@@ -1,4 +1,5 @@
 {% extends "shell.html" %}
+{% from "_ui.html" import avatar, status_pill %}
 {% block title %}자산 · {{ APP_NAME }}{% endblock %}
 
 {% block content %}
@@ -32,7 +33,7 @@
     <tbody>
       {% for row in owner_rows %}
       <tr>
-        <td>{{ '🤝 공동' if row.label == '공동' else '🙋 ' + row.label }}</td>
+        <td><span class="avatar-name">{{ avatar(row.label, row.idx) }} {{ row.label }}</span></td>
         <td>{{ row.assets | won }}</td>
         <td>{{ ('−' + (row.liabilities | won)) if row.liabilities else '-' }}</td>
         <td><b>{{ row.net | won }}</b></td>
@@ -76,11 +77,18 @@
         </h3>
         {% for asset in rows %}
           <div class="list-row acct-row" style="{{ 'opacity:0.55;' if asset.exclude_from_stats }}">
-            <span class="owner-badge">{{ '🤝 공동' if not asset.owner else '🙋 ' ~ asset.owner.display_name }}</span>
+            {% if asset.owner %}{{ avatar(asset.owner.display_name, current_user.couple.members.index(asset.owner)) }}
+            {% else %}{{ avatar('공동', None) }}{% endif %}
             <div style="flex:1; min-width:0;">
               <div class="name">{{ asset.name }}
                 {% for cur in asset.currencies %}<span class="cur-tag">{{ cur }}</span>{% endfor %}
                 {% if asset.exclude_from_stats %}<span class="cur-tag" title="합계·차트·추이에서 제외됨">📊 제외</span>{% endif %}
+                {% set age = asset.price_age_days %}
+                {% if age is not none %}
+                  {% if age == 0 %}{{ status_pill('시세 오늘', 'ok') }}
+                  {% elif age >= 3 %}{{ status_pill('시세 ' ~ age ~ '일 전', 'warn') }}
+                  {% else %}{{ status_pill('시세 ' ~ age ~ '일 전') }}{% endif %}
+                {% endif %}
               </div>
               {% if asset.institution %}<div class="where">{{ asset.institution }}</div>{% endif %}
               {# holdings breakdown (only if more than one, or a stock) #}

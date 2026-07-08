@@ -1,4 +1,5 @@
 {% extends "shell.html" %}
+{% from "_ui.html" import status_pill %}
 {% block title %}자산 리포트 · {{ APP_NAME }}{% endblock %}
 
 {% block content %}
@@ -17,6 +18,24 @@
   </div>
 </div>
 
+{# ===== latest snapshot stats (same grammar as the dashboard) ===== #}
+{% if report.hasData %}
+<div class="grid cols-3 stat-row">
+  <div class="card stat sm" title="{{ report.latestAssets | won }}">
+    <div class="label">총 자산 (최신 스냅샷)</div>
+    <div class="value-sm">{{ report.latestAssets | won_short }}</div>
+  </div>
+  <div class="card stat sm" title="{{ report.latestLiabilities | won }}">
+    <div class="label">총 부채</div>
+    <div class="value-sm">{{ report.latestLiabilities | won_short }}</div>
+  </div>
+  <div class="card stat sm" title="{{ report.latestRealEstate | won }}">
+    <div class="label">부동산</div>
+    <div class="value-sm">{{ report.latestRealEstate | won_short }}</div>
+  </div>
+</div>
+{% endif %}
+
 {# ===== Target allocation vs current (rebalancing) ===== #}
 <div class="card" style="margin-bottom:18px;">
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
@@ -33,9 +52,11 @@
         <input type="text" inputmode="decimal" name="target_{{ row.key }}"
                value="{{ row.target if row.target is not none else '' }}" placeholder="목표 %">
         {% if row.diff is not none %}
-          <span class="alloc-diff {{ 'signal' if row.signal }}">
-            {% if row.signal %}{{ '▼ ' ~ row.diff ~ '%p 초과 — 축소 검토' if row.diff > 0 else '▲ ' ~ (row.diff | abs) ~ '%p 부족 — 확대 검토' }}
-            {% else %}{{ '+' if row.diff >= 0 }}{{ row.diff }}%p{% endif %}
+          <span class="alloc-diff">
+            {% if row.signal and row.diff > 0 %}{{ status_pill('축소 필요', 'bad') }}
+            {% elif row.signal %}{{ status_pill('확대 필요', 'warn') }}
+            {% else %}{{ status_pill('균형', 'ok') }}{% endif %}
+            <span class="alloc-num">{{ '+' if row.diff >= 0 }}{{ row.diff }}%p</span>
           </span>
         {% else %}<span class="alloc-diff">—</span>{% endif %}
       </div>

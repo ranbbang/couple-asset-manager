@@ -80,9 +80,12 @@ def usd_exposure(assets, rate) -> dict:
 def owner_breakdown(assets, rate, members) -> list[dict]:
     """Per-owner totals: one row per member plus 공동 (owner_id NULL).
 
-    Rows: {"label", "assets", "liabilities", "net"}; empty rows are dropped.
+    Rows: {"label", "idx", "assets", "liabilities", "net"}; empty rows are
+    dropped. `idx` is the member's position (0/1) for avatar coloring, or
+    None for the joint row.
     """
     labels = {m.id: m.display_name for m in members}
+    indexes = {m.id: i for i, m in enumerate(members)}
     buckets = {}
     for a in included(assets):
         key = a.owner_id if a.owner_id in labels else None
@@ -98,6 +101,7 @@ def owner_breakdown(assets, rate, members) -> list[dict]:
             continue
         rows.append({
             "label": labels.get(key, "공동"),
+            "idx": indexes.get(key),
             "assets": b["assets"],
             "liabilities": b["liabilities"],
             "net": b["assets"] - b["liabilities"],

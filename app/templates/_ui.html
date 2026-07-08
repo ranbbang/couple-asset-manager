@@ -1,0 +1,12 @@
+{# Shared UI macros (avatars, status pills). #}
+
+{# Colored initial avatar. idx = member position (0/1) for a stable per-person
+   color; None renders the sage "joint" avatar. size: '' | 'sm' #}
+{% macro avatar(label, idx=None, size='') -%}
+<span class="avatar-dot {{ 'joint' if idx is none else 'm' ~ (idx % 2 + 1) }}{{ ' ' ~ size if size }}" title="{{ label }}">{{ label[:1] }}</span>
+{%- endmacro %}
+
+{# Scannable status pill. tone: ok | warn | bad | '' (neutral) #}
+{% macro status_pill(text, tone='') -%}
+<span class="status-pill{{ ' ' ~ tone if tone }}">{{ text }}</span>
+{%- endmacro %}

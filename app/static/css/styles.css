@@ -219,6 +219,47 @@ small { color: var(--ink-soft); }
 .feed-detail { color: var(--ink-faint); font-size: 0.8rem; margin-top: 2px; }
 .goal-meta .eta { color: var(--ink-faint); font-size: 0.78rem; }
 
+/* ----- status pills (throxy Pass/Skip grammar) ---------------------------
+   ok = healthy/fresh, warn = needs attention, bad = act now, default = info */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px; white-space: nowrap;
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.01em;
+  background: var(--surface-2); color: var(--ink-soft); border: 1px solid var(--line);
+}
+.status-pill::before { content: ""; width: 6px; height: 6px; border-radius: 99px;
+  background: var(--ink-faint); }
+.status-pill.ok { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.status-pill.ok::before { background: var(--accent); }
+.status-pill.warn { color: var(--amber); background: color-mix(in srgb, var(--amber) 12%, transparent);
+  border-color: color-mix(in srgb, var(--amber) 30%, transparent); }
+.status-pill.warn::before { background: var(--amber); }
+.status-pill.bad { color: var(--rose); background: color-mix(in srgb, var(--rose) 12%, transparent);
+  border-color: color-mix(in srgb, var(--rose) 30%, transparent); }
+.status-pill.bad::before { background: var(--rose); }
+
+/* ----- initial avatars (member identity colors) --------------------------- */
+.avatar-dot {
+  display: inline-grid; place-items: center; flex: 0 0 auto;
+  width: 26px; height: 26px; border-radius: 99px;
+  font-size: 0.72rem; font-weight: 700; color: var(--accent-ink);
+  vertical-align: middle;
+}
+.avatar-dot.m1 { background: #A99BD6; }
+.avatar-dot.m2 { background: #7FA9B8; }
+.avatar-dot.joint { background: var(--accent); }
+.avatar-dot.sm { width: 20px; height: 20px; font-size: 0.62rem; }
+.avatar-name { display: inline-flex; align-items: center; gap: 7px; }
+
+/* ----- topbar live-note (small live counters) ------------------------------ */
+.live-note {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 3px;
+  color: var(--ink-faint); font-size: 0.74rem; font-family: var(--font-mono);
+  letter-spacing: 0.03em; text-align: right; font-variant-numeric: tabular-nums;
+}
+.live-note b { color: var(--ink-soft); font-weight: 600; }
+
 /* ----- per-owner summary table ------------------------------------------- */
 .owner-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 .owner-table th { text-align: left; color: var(--ink-faint); font-size: 0.78rem;
@@ -235,8 +276,9 @@ small { color: var(--ink-soft); }
 .alloc-current { color: var(--ink-soft); font-size: 0.86rem; }
 .alloc-row input { padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px;
   font-size: 0.88rem; width: 100%; }
-.alloc-diff { color: var(--ink-faint); font-size: 0.84rem; }
-.alloc-diff.signal { color: var(--rose); font-weight: 700; }
+.alloc-diff { color: var(--ink-faint); font-size: 0.84rem;
+  display: inline-flex; align-items: center; gap: 8px; }
+.alloc-num { font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) {
   .alloc-row { grid-template-columns: 1fr 1fr; }
 }

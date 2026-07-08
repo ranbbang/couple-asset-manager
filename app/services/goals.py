@@ -61,9 +61,22 @@ def estimate_completion(goal, current, monthly_gain) -> date | None:
 def goal_view(goal, couple, rate, monthly_gain=None) -> dict:
     """Bundle the numbers a goal card needs."""
     cur = current_amount(goal, couple, rate)
+    pct = progress_pct(goal, couple, rate)
+    eta = estimate_completion(goal, cur, monthly_gain)
+    # Scannable status pill: 달성 / 순항 (projection exists) / 정체 (auto-linked
+    # but the household isn't gaining at its recent pace) / None (no signal).
+    if pct >= 100:
+        status = "done"
+    elif eta is not None:
+        status = "on_track"
+    elif goal.is_linked and monthly_gain is not None and monthly_gain <= 0:
+        status = "stalled"
+    else:
+        status = None
     return {
         "current": cur,
-        "pct": progress_pct(goal, couple, rate),
+        "pct": pct,
         "linked": goal.is_linked,
-        "eta": estimate_completion(goal, cur, monthly_gain),
+        "eta": eta,
+        "status": status,
     }
