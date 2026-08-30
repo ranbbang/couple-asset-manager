@@ -52,7 +52,7 @@ def dashboard():
         .all()
     )
     goal_views = {
-        g.id: goals_svc.goal_view(g, couple, rate, monthly_gain) for g in goals
+        g.id: goals_svc.goal_view(g, assets, rate, monthly_gain) for g in goals
     }
     recent = (
         ActivityLog.query.filter_by(couple_id=couple.id)

@@ -60,8 +60,21 @@ def _compute(assets, rate):
 
 def capture_snapshot(couple, rate, taken_on: date | None = None) -> AssetSnapshot:
     """Create or update (upsert) the snapshot for a given month."""
+    from sqlalchemy.orm import selectinload
+
+    from ..models import Asset
+
     taken_on = taken_on or month_start()
-    c = _compute(couple.assets, rate)
+    # Eager-load holdings/category instead of the lazy couple.assets relation
+    # (_compute reads both per asset): avoids an N+1 that used to fire on
+    # every asset write AND every /reports page view (refresh_current_month
+    # runs on each load to keep the current month's point up to date).
+    assets = (
+        Asset.query.filter_by(couple_id=couple.id)
+        .options(selectinload(Asset.holdings), selectinload(Asset.category))
+        .all()
+    )
+    c = _compute(assets, rate)
 
     snap = AssetSnapshot.query.filter_by(
         couple_id=couple.id, taken_on=taken_on

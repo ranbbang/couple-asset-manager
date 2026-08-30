@@ -87,3 +87,83 @@ repeat).
 **Verified**: `pytest` — 13/13 pass (~1.2s). Real app backup path
 double-checked via `create_app()` + `db_path()` printing the correct real
 `app.db` path.
+
+---
+
+## Round 3 — 2026-08-30
+
+**Found**: `app/assets/routes.py::refresh_prices()` built its holdings list
+from `current_user.couple.assets[*].holdings` — a classic N+1 (1 query for
+the assets list, then 1 more per asset the first time its `.holdings` is
+touched). Confirmed directly against the real household's data (Couple 2,
+29 assets, read-only `SELECT`s only) with a query-count harness: **30
+queries** for that access pattern vs **2** with `selectinload`. The same
+`couple.assets` pattern also showed up in `services/snapshots.py::capture_snapshot()`
+(called by every asset write **and** by every `/reports` page load, via
+`refresh_current_month`) and in `services/goals.py::current_amount()` /
+`goals/routes.py::_populate_links()`.
+
+**Changed**:
+- `assets/routes.py::refresh_prices()` — eager-loads assets+holdings via
+  `selectinload` instead of the lazy `couple.assets` relation.
+- `services/snapshots.py::capture_snapshot()` — same fix; benefits every
+  caller (`refresh_current_month`, the direct `capture_snapshot` call in
+  reports) without changing their signatures.
+- `services/goals.py::current_amount/progress_pct/goal_view` — signature
+  changed from `(goal, couple, rate, ...)` to `(goal, assets, rate, ...)`,
+  so callers pass an already-loaded list instead of the function touching
+  `couple.assets` itself. Updated both call sites: `main/routes.py::dashboard()`
+  (already had `assets` in scope) and `goals/routes.py::index()` (added its
+  own eager-loaded fetch, matching the pattern in `assets/routes.py::index()`).
+
+**Honest results, not just the theory**: built an integration test
+(`tests/test_query_counts.py`) hitting `/dashboard`, `/goals/`, and
+`/assets/refresh-prices` through the real Flask test client with 15 assets
++ 3 category-linked goals, counting actual SQL statements before vs. after
+each fix:
+  - `refresh_prices`: **45 → 17** — the clean, unambiguous win; nothing else
+    in that request path had already warmed the identity map.
+  - `/dashboard`: **10 → 10**, no change — `dashboard()` already ran its own
+    eager-loaded assets query *before* calling `goal_view`, which happened
+    to populate every asset's `holdings`/`category` in the SQLAlchemy
+    identity map first, so the old `couple.assets` access wasn't actually
+    N+1-ing on its own in this path — it was riding on someone else's
+    eager load. Kept the explicit-assets version anyway: it's the correct,
+    self-contained interface and doesn't depend on another module having
+    already warmed the cache.
+  - `/goals/`: **2 → 5** — went *up*, not down, at this scale (adds one
+    fixed `selectinload` round trip that the old lazy path didn't always
+    pay for locally). Kept for the same reason as dashboard, and because
+    `services/goals.py` no longer needs a live `Couple` ORM object at all
+    (see `tests/test_goals_service.py`, which unit-tests it with plain
+    lists) — a real testability win independent of the query count.
+
+Recorded this plainly instead of writing up three matching "before/after"
+wins, because two of the three didn't hold up the way the initial theory
+predicted, and that's worth knowing for the next N+1 hunt in this codebase:
+identity-map caching from an *unrelated* earlier query in the same request
+can mask a lazy-relationship access that looks identical to one that
+genuinely does N+1 in isolation.
+
+**Also found & fixed** (uncovered while building the integration tests
+above): `tests/conftest.py`'s `members` fixture used `@test.local` email
+addresses. `.local` is an IANA-reserved TLD, and `email_validator` — which
+WTForms' `Email()` validator calls even with `check_deliverability=False`
+— rejects it outright as "a special-use or reserved name." Every
+`_login()`-style test using that fixture was silently failing at the login
+form and asserting on the *login page*, not the page under test — the
+query-count assertions were passing vacuously against near-zero query
+counts. Switched to `@example.com` (RFC 2606, and what the app's own seed
+data already uses) and added a `_login()` helper that hard-asserts
+"로그아웃" appears in the response, so a broken login can never again pass
+silently. Also switched `tests/conftest.py`'s `app` fixture from
+`sqlite:///:memory:` to a `tmp_path`-backed file DB while investigating
+this, since an in-memory DB isn't visible across the separate connection a
+live test-client request can open — a second, independent trap for the
+same class of "test silently does nothing" failure. Neither of these
+affected Round 1/2's tests (pure function calls within one session), only
+the new HTTP-level ones.
+
+**Verified**: `pytest` — 22/22 pass (~3-6s). Sanity-checked
+`services/snapshots.report_data()` against the real household (Couple 2)
+post-fix with no errors.

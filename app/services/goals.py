@@ -12,8 +12,14 @@ from decimal import Decimal
 from .finance import _is_liability
 
 
-def current_amount(goal, couple, rate) -> Decimal:
-    """Live current amount for a goal in KRW."""
+def current_amount(goal, assets, rate) -> Decimal:
+    """Live current amount for a goal in KRW.
+
+    `assets` is the household's asset list — pass one already eager-loaded
+    with holdings/category (see main.routes.dashboard, goals.routes.index)
+    rather than a bare `couple.assets`, which lazy-loads a fresh
+    holdings/category query per asset the first time each is touched.
+    """
     if not goal.is_linked:
         return goal.manual_amount
 
@@ -21,7 +27,7 @@ def current_amount(goal, couple, rate) -> Decimal:
     asset_ids = set(goal.asset_id_list)
     total = Decimal(0)
     seen = set()
-    for a in couple.assets:
+    for a in assets:
         if a.exclude_from_stats or _is_liability(a):
             continue
         if a.id in seen:
@@ -32,11 +38,11 @@ def current_amount(goal, couple, rate) -> Decimal:
     return total
 
 
-def progress_pct(goal, couple, rate) -> int:
+def progress_pct(goal, assets, rate) -> int:
     target = goal.target_amount or Decimal(0)
     if target <= 0:
         return 0
-    pct = current_amount(goal, couple, rate) / target * 100
+    pct = current_amount(goal, assets, rate) / target * 100
     return min(int(pct), 100)
 
 
@@ -58,10 +64,10 @@ def estimate_completion(goal, current, monthly_gain) -> date | None:
     return date(total // 12, total % 12 + 1, 1)
 
 
-def goal_view(goal, couple, rate, monthly_gain=None) -> dict:
-    """Bundle the numbers a goal card needs."""
-    cur = current_amount(goal, couple, rate)
-    pct = progress_pct(goal, couple, rate)
+def goal_view(goal, assets, rate, monthly_gain=None) -> dict:
+    """Bundle the numbers a goal card needs. `assets` — see current_amount."""
+    cur = current_amount(goal, assets, rate)
+    pct = progress_pct(goal, assets, rate)
     eta = estimate_completion(goal, cur, monthly_gain)
     # Scannable status pill: 달성 / 순항 (projection exists) / 정체 (auto-linked
     # but the household isn't gaining at its recent pace) / None (no signal).

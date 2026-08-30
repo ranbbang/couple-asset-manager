@@ -287,7 +287,17 @@ def delete(asset_id: int):
 @couple_required
 def refresh_prices():
     """Fetch live stock prices for every stock holding in the household."""
-    all_holdings = [h for a in current_user.couple.assets for h in a.holdings]
+    from sqlalchemy.orm import selectinload
+
+    # Eager-load holdings in one extra query instead of one per asset
+    # (current_user.couple.assets[*].holdings is an N+1: 1 + len(assets)
+    # round trips — noticeable once a household has more than a handful).
+    assets = (
+        Asset.query.filter_by(couple_id=current_user.couple_id)
+        .options(selectinload(Asset.holdings))
+        .all()
+    )
+    all_holdings = [h for a in assets for h in a.holdings]
     updated = prices.refresh_holdings(all_holdings)
     db.session.commit()
     _sync_snapshot()

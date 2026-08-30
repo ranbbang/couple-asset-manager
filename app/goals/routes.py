@@ -40,11 +40,11 @@ def _populate_links(form: GoalForm) -> None:
     ]
 
 
-def _goal_views(goals):
+def _goal_views(goals, assets):
     rate = fx.get_cached_rate()
     monthly_gain = snapshots.avg_monthly_gain(current_user.couple)
     return {
-        g.id: goals_svc.goal_view(g, current_user.couple, rate, monthly_gain)
+        g.id: goals_svc.goal_view(g, assets, rate, monthly_gain)
         for g in goals
     }
 
@@ -53,12 +53,25 @@ def _goal_views(goals):
 @login_required
 @couple_required
 def index():
+    from sqlalchemy.orm import selectinload
+
+    from ..models import Asset
+
     goals = (
         Goal.query.filter_by(couple_id=current_user.couple_id)
         .order_by(Goal.created_at.asc())
         .all()
     )
-    return render_template("goals/index.html", goals=goals, views=_goal_views(goals))
+    # Eager-load once and reuse per goal — goal_view -> current_amount reads
+    # each asset's category/holdings, which N+1's under the lazy
+    # couple.assets relation once there's more than a couple of goals.
+    assets = (
+        Asset.query.filter_by(couple_id=current_user.couple_id)
+        .options(selectinload(Asset.holdings), selectinload(Asset.category))
+        .all()
+    )
+    return render_template("goals/index.html", goals=goals,
+                           views=_goal_views(goals, assets))
 
 
 @goals_bp.route("/new", methods=["GET", "POST"])
