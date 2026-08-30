@@ -405,3 +405,36 @@ Fixed the test to match the real markup with a small regex rather than a
 brittle exact-string match on whitespace.
 
 **Verified**: `pytest` — 72/72 pass (~30s). No source bug found this round.
+
+---
+
+## Round 11 — 2026-08-30
+
+**Found**: both `AGENTS.md` and `app/AGENTS.md` (stamped `Updated: 2026-06-12`)
+were stale enough to actively mislead an agent, not just outdated:
+- `app/AGENTS.md` said models were "`Asset` (incl. `currency`)" with no
+  mention of `Holding` or `Category` — the schema moved to
+  multi-holding accounts and a fully user-editable `Category` table well
+  before this session, but the doc still described the old shape.
+- It referenced `finance.to_krw(amount, currency, rate)` — **this function
+  does not exist**; conversion is `Holding.value_krw(rate)` /
+  `Asset.value_krw(rate)`. Grepped `services/finance.py` to confirm before
+  writing the replacement, rather than assuming.
+- The `categories/` blueprint (an entire feature area) wasn't listed in
+  Subdirectories at all. The `services/` list was missing `categories.py`,
+  `goals.py`, `prices.py`, `backup.py`.
+- Root `AGENTS.md` said "No persistent test suite is committed" — false as
+  of Round 1; there are 72 tests now.
+
+**Changed**: rewrote both files' Key Files / Subdirectories / Common
+Patterns / Testing Requirements to match the current codebase, and folded
+in the concrete, hard-won lessons from this session as durable notes for
+whoever (human or agent) touches this repo next: the `tmp_path`-file-vs-
+`:memory:` DB trap, the `instance_path` cache-file leak, the
+`@example.com`-vs-reserved-TLD email gotcha, the `couple.assets` N+1
+pattern and its `selectinload` fix, and the `Optional()`-skips-
+`validate_<field>` WTForms gotcha from Round 7. Bumped both files'
+`Updated:` header to today.
+
+**Verified**: `pytest` — 72/72 pass (docs-only change, run as a sanity
+check that nothing was accidentally touched).

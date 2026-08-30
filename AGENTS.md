@@ -1,4 +1,4 @@
-<!-- Generated: 2026-06-12 | Updated: 2026-06-12 -->
+<!-- Generated: 2026-06-12 | Updated: 2026-08-30 -->
 
 # 우리집 자산관리 (Couples Asset Management)
 
@@ -14,7 +14,8 @@ manually and stored locally.
 |------|-------------|
 | `run.py` | Dev entry point — `python run.py` serves on http://127.0.0.1:5000 |
 | `seed.py` | Loads a demo couple, assets, goals, and activity (drops & recreates tables) |
-| `requirements.txt` | Pinned dependencies (Flask, SQLAlchemy, Flask-Login, Flask-WTF) |
+| `requirements.txt` | Pinned runtime dependencies (Flask, SQLAlchemy, Flask-Login, Flask-WTF) |
+| `requirements-dev.txt` | Adds `pytest` on top of `requirements.txt`, for running `tests/` |
 | `.env.example` | Template for `SECRET_KEY` / `DATABASE_URL` (copy to `.env`) |
 | `README.md` | Setup, architecture, schema, and demo logins |
 | `app.db` | SQLite database (git-ignored; created on first run / seed) |
@@ -23,6 +24,8 @@ manually and stored locally.
 | Directory | Purpose |
 |-----------|---------|
 | `app/` | The Flask application package (see `app/AGENTS.md`) |
+| `tests/` | `pytest` suite — `conftest.py` has shared fixtures (read its docstring; it documents non-obvious test-isolation traps) |
+| `backups/` | Timestamped `app.db` copies from `services/backup.py` (git-ignored) |
 | `.venv/` | Local virtual environment (git-ignored, not application code) |
 | `.idea/` `.claude/` `.omc/` | IDE / tooling state (not application code) |
 
@@ -35,9 +38,9 @@ manually and stored locally.
 - Keep business logic in `app/services/` and route handlers thin.
 
 ### Testing Requirements
-- No persistent test suite is committed. Validate changes with Flask's test client against `create_app()` (set `app.config["WTF_CSRF_ENABLED"] = False` for POST tests).
+- A real `pytest` suite lives in `tests/` (install `requirements-dev.txt`, then run `pytest` from the project root). See `app/AGENTS.md`'s Testing Requirements for the fixture gotchas (file-backed test DB, isolated `instance_path`, real-domain test emails) — read them before adding a new fixture that touches the DB or a service that writes to disk.
 - Smoke-check the boot path: `python run.py` then load `/login`.
-- The finance math in `app/services/finance.py` is pure and the prime target for unit tests.
+- The finance/goals math in `app/services/finance.py` and `app/services/goals.py` is pure (takes a plain asset list, no live DB/ORM needed) and the easiest place to add more unit tests.
 
 ### Common Patterns
 - One blueprint per feature area, each bundling `routes.py` (+ `forms.py`).
