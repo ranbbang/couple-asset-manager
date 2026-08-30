@@ -240,3 +240,42 @@ isn't a no-op either way).
 `unittest.mock.patch` — no real network calls). Confirmed
 `instance/fx_cache.json`'s real content is byte-identical before and after
 the full suite run.
+
+---
+
+## Round 6 — 2026-08-30
+
+**Found**: `services/prices.py` (stock quote fetch/cache/fallback, and the
+`refresh_holdings()` that actually mutates Holding rows) had zero test
+coverage — the second half of the same "the two network services have no
+tests" gap Round 5 started closing for `fx.py`.
+
+**Added tests** (`tests/test_prices.py`, 9 tests): live fetch caches to
+memory + file; TTL skip (mocked `urlopen` asserted never called); file-cache
+fallback on network error; a ticker with no cache and a failed fetch is
+correctly *omitted* from the result (not a crash, not a bogus zero);
+blank/`None` tickers are skipped without ever touching the network; a
+ticker that fails to fetch keeps its previously-cached price in the merged
+file-cache write instead of being wiped (the exact behavior the comment
+above that code claims, now actually asserted); `refresh_holdings()` only
+updates stock holdings with a resolvable quote and leaves cash holdings /
+un-ticker'd stocks / unquotable tickers untouched; and — following Round
+5's finding — an explicit before/after diff of the real project's
+`instance/price_cache.json`, confirming the isolated `instance_path` fixture
+from Round 5 already covers this service too (no new isolation bug found
+here, but worth checking rather than assuming).
+
+**Also documented, not changed**: `refresh_holdings()` only syncs a
+holding's stored currency to the quote's currency when that currency is
+`KRW` or `USD` (the app's only two supported currencies) — for a
+foreign-listed ticker where Yahoo returns e.g. `GBP`, the price is still
+applied but the currency label is silently left as whatever it was before,
+which would misrepresent the value if it's ever meaningfully different
+from KRW/USD terms. Added a test that pins down and names this behavior
+explicitly rather than changing it — the app doesn't currently expose any
+other currency in its UI, so there's no clear product intent to act on
+without asking; flagging it here for whoever adds non-KRW/USD support.
+
+**Verified**: `pytest` — 43/43 pass (~10s). Confirmed both
+`instance/price_cache.json` and `instance/fx_cache.json` byte-identical
+before/after this round's test run.
