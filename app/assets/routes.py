@@ -83,11 +83,23 @@ def _dec(value, default="0") -> Decimal:
         return Decimal(default)
 
 
+class NegativeAmountError(ValueError):
+    """Raised when a cash holding row has a negative amount.
+
+    There's no modeled concept of a negative cash balance — a debt belongs
+    in the 빚 category as its own (positive) amount instead. Without this
+    check a negative number silently shrinks the account's total (and every
+    aggregate that sums it) with no error and no visible sign anything is
+    wrong.
+    """
+
+
 def _parse_holdings() -> list[Holding]:
     """Build Holding rows from the dynamic form arrays.
 
-    Cash rows need a non-empty amount; stock rows need a ticker + quantity.
-    Empty rows are skipped. Returns a list of unsaved Holding objects.
+    Cash rows need a non-empty, non-negative amount; stock rows need a
+    ticker + quantity. Empty rows are skipped. Returns a list of unsaved
+    Holding objects. Raises NegativeAmountError if any cash amount is < 0.
     """
     kinds = request.form.getlist("holding_kind")
     currencies = request.form.getlist("holding_currency")
@@ -115,6 +127,10 @@ def _parse_holdings() -> list[Holding]:
             label = (labels[i] if i < len(labels) else "").strip() or None
             if amt == 0 and label is None:
                 continue
+            if amt < 0:
+                raise NegativeAmountError(
+                    f"{label or (i + 1)}: 금액은 0 이상이어야 합니다 (빚은 '빚' 카테고리로 별도 등록하세요)."
+                )
             holdings.append(Holding(
                 kind=HOLDING_CASH, currency=cur, amount=amt,
                 label=label, sort_order=i,
@@ -168,7 +184,12 @@ def create():
 
     if form.validate_on_submit():
         cat = _get_category(form.category.data)
-        holdings = _parse_holdings()
+        try:
+            holdings = _parse_holdings()
+        except NegativeAmountError as e:
+            flash(str(e), "error")
+            return render_template("assets/form.html", form=form, mode="new",
+                                   holdings_json="[]")
         if not holdings:
             flash("최소 한 개의 보유 항목(현금 또는 주식)을 입력하세요.", "error")
             return render_template("assets/form.html", form=form, mode="new",
@@ -210,7 +231,12 @@ def edit(asset_id: int):
 
     if form.validate_on_submit():
         cat = _get_category(form.category.data)
-        holdings = _parse_holdings()
+        try:
+            holdings = _parse_holdings()
+        except NegativeAmountError as e:
+            flash(str(e), "error")
+            return render_template("assets/form.html", form=form, mode="edit",
+                                   asset=asset, holdings_json=_holdings_json(asset))
         if not holdings:
             flash("최소 한 개의 보유 항목(현금 또는 주식)을 입력하세요.", "error")
             return render_template("assets/form.html", form=form, mode="edit",

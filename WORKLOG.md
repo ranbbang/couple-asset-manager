@@ -167,3 +167,35 @@ the new HTTP-level ones.
 **Verified**: `pytest` — 22/22 pass (~3-6s). Sanity-checked
 `services/snapshots.report_data()` against the real household (Couple 2)
 post-fix with no errors.
+
+---
+
+## Round 4 — 2026-08-30
+
+**Found**: `assets/routes.py::_parse_holdings()` parsed a cash holding's
+amount with `_dec()` and only skipped a row if it was exactly `0` with no
+label — a negative amount (e.g. a typo'd `-50000`) was accepted as-is, no
+error, no warning. Confirmed the actual damage with the test below before
+writing the fix: it silently produced `"assets": -1.0` in the account's own
+overview JSON payload, quietly shrinking every total that sums holdings
+(account value, category breakdown, dashboard net worth) — the wrong
+number ships with no visible sign anything failed. There's no modeled
+concept of "negative cash" in this schema; a debt belongs in the 빚
+category as its own positive amount.
+
+**Changed**: `_parse_holdings()` now raises a `NegativeAmountError` (with a
+message naming the offending row) when a cash amount is negative; `create()`
+and `edit()` in `assets/routes.py` catch it and re-render the form with a
+flash error instead of silently saving. Stock quantities already had an
+equivalent guard (`qty <= 0: continue`) — this brings cash amounts in line.
+
+**Verified**: `tests/test_assets_routes.py` (3 tests) — posts a negative
+amount to `/assets/new` and confirms no Asset is created and the error
+message shows; confirms a positive amount still saves normally (regression
+guard); confirms editing an existing asset with a negative amount is also
+rejected and leaves the original holding untouched. Checked these tests
+actually catch the bug, not just pass vacuously: reverted the routes.py
+change and re-ran — 2 of 3 failed exactly as expected, with the failure
+output showing the real pre-fix payload
+(`"assets": -1.0, "byCategory": {"1": -1.0}`), confirming both the bug and
+that the test suite catches it. Full suite: `pytest` — 25/25 pass.
