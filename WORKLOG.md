@@ -355,3 +355,28 @@ here — all 8 passed on the first run against the existing code; this
 round is pure coverage, following Round 6's pattern rather than Round 7's.
 
 **Verified**: `pytest` — 59/59 pass (~20s).
+
+---
+
+## Round 9 — 2026-08-30
+
+**Added tests** (`tests/test_reports_routes.py`, 6 tests —
+`app/reports/routes.py` had zero coverage before this round): target
+allocation saves partial percentages (blank fields skipped), rejects a
+combined total over 100%, rejects a non-numeric value, rejects an
+out-of-range percentage; manually recording a snapshot creates exactly one
+`AssetSnapshot` for the current month; CSV export contains the expected
+month and figures.
+
+**One test wrong, not the code**: `test_export_csv_contains_snapshot_history`
+initially asserted the net-worth column would be comma-formatted
+(`"1,000,000"`) — it isn't; `export_csv()` writes that column as a plain
+`round(float(...))` int with `csv.writer`, and only the separate
+"카테고리별 상세" column applies `:,`-formatting per the route's own code.
+Fixed the test's expectation rather than the route, since the actual
+behavior is internally consistent (spreadsheet apps read a plain numeric
+column correctly; the detail column is free text, where the comma is just
+for human readability) and nothing depends on the omitted case.
+
+**Verified**: `pytest` — 65/65 pass (~24s). No source bug found this round
+— pure coverage, like Round 6 and Round 8.
