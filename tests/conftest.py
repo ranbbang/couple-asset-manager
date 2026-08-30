@@ -32,6 +32,14 @@ def app(tmp_path):
         SECRET_KEY = "test-secret"
 
     application = create_app(TestConfig)
+    # fx.py/prices.py cache to a JSON file under current_app.instance_path,
+    # which Flask defaults to a fixed <project_root>/instance/ directory —
+    # NOT anything TestConfig controls. Left alone, any test that reaches
+    # those services (directly, or indirectly via a route that calls
+    # fx.get_cached_rate()) reads and can overwrite the real app's live
+    # instance/fx_cache.json and instance/price_cache.json. Reassigning the
+    # attribute post-construction is enough; nothing else caches a copy of it.
+    application.instance_path = str(tmp_path / "instance")
     with application.app_context():
         yield application
 

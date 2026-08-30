@@ -199,3 +199,44 @@ change and re-ran — 2 of 3 failed exactly as expected, with the failure
 output showing the real pre-fix payload
 (`"assets": -1.0, "byCategory": {"1": -1.0}`), confirming both the bug and
 that the test suite catches it. Full suite: `pytest` — 25/25 pass.
+
+---
+
+## Round 5 — 2026-08-30
+
+**Found**: `services/fx.py` and `services/prices.py` cache to a JSON file
+under `current_app.instance_path`. Flask defaults `instance_path` to a
+fixed `<project_root>/instance/` directory — nothing in `TestConfig`
+touches it. Any test that reaches `fx.py` (directly, or indirectly through
+a route — `dashboard`, `goals/`, and `refresh-prices` all call
+`fx.get_cached_rate()`) reads and can **overwrite the real app's live**
+`instance/fx_cache.json`.
+
+**Proved it wasn't theoretical** before fixing: saved the real file's exact
+bytes (`{"rate": 1383.118493, ...}`), reverted the fixture change, ran just
+the one new test that exercises a successful live-fetch-and-cache path —
+the real `instance/fx_cache.json` came back as `{"rate": 1500.25, ...}`
+(the test's fake value). Restored the real file's original bytes
+immediately after confirming. This was a real, reproducible bug in the
+test setup, not a hypothetical.
+
+**Changed**: `tests/conftest.py`'s `app` fixture now reassigns
+`application.instance_path` to a `tmp_path` subdirectory right after
+`create_app()`. Reassigning the plain attribute post-construction is
+sufficient — nothing else in Flask caches a separate copy of it.
+
+**Added tests** (`tests/test_fx.py`, 9 tests — `fx.py` had zero coverage
+before this): cache precedence (memory > file > config default), TTL
+honored (mocked `urlopen` never called within TTL), successful live fetch
+updates memory + file cache, network-error fallback, non-positive-rate
+guard (a bad live value must not get promoted into the cache), stale
+cache preferred over the config default after TTL expiry, and an explicit
+regression test that runs real fx.py activity and diffs the real project's
+`instance/fx_cache.json` before/after (asserting no change) while also
+asserting the *test's own* isolated cache file *was* written (so the test
+isn't a no-op either way).
+
+**Verified**: `pytest` — 34/34 pass (~10s, includes network mocking via
+`unittest.mock.patch` — no real network calls). Confirmed
+`instance/fx_cache.json`'s real content is byte-identical before and after
+the full suite run.
