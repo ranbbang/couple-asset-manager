@@ -8,6 +8,8 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
+from flask import current_app
+
 from .. import config as app_config
 
 BACKUP_DIR = app_config.BASE_DIR / "backups"
@@ -15,8 +17,15 @@ MAX_BACKUPS = 20  # keep the most recent N; older ones are pruned automatically
 
 
 def db_path() -> Path:
-    """Resolve the on-disk path of the sqlite file from the configured URI."""
-    uri = app_config.Config.SQLALCHEMY_DATABASE_URI
+    """Resolve the on-disk path of the sqlite file from the ACTIVE app's URI.
+
+    Reads current_app.config rather than the Config class directly, so a
+    test app (or any future config override, e.g. DATABASE_URL pointing
+    elsewhere) backs up its own database instead of always falling back to
+    the class-level default — which silently backed up the real app.db even
+    from an in-memory test run.
+    """
+    uri = current_app.config["SQLALCHEMY_DATABASE_URI"]
     prefix = "sqlite:///"
     if not uri.startswith(prefix):
         raise ValueError(f"backup only supports sqlite databases, got: {uri}")

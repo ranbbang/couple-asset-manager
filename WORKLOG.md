@@ -58,3 +58,32 @@ override (test or otherwise). Not harmful (extra backup copy of legitimate
 data, once/day guard limits it), but it breaks test isolation and would
 silently back up/restore the wrong file under any real config override.
 Picking this up next round.
+
+---
+
+## Round 2 — 2026-08-30
+
+**Found**: (carried over from Round 1) `app/services/backup.py::db_path()`
+read `app.config.Config.SQLALCHEMY_DATABASE_URI` — the class attribute —
+instead of the active app's config, so any config override (test config,
+or a future `DATABASE_URL` env-based deployment config) was silently
+ignored and it always resolved to the real project's `app.db`.
+
+**Changed**: `db_path()` now reads `current_app.config["SQLALCHEMY_DATABASE_URI"]`.
+Verified this is behavior-preserving in production (the real app still
+resolves to `D:\...\app.db`, since `Flask.config.from_object` copies the
+same class attributes into `app.config` at startup) — the only behavior
+change is that a *different* active config (like the test suite's
+`sqlite:///:memory:`) is now respected instead of overridden.
+
+**Added tests** (`tests/test_backup.py`): `db_path()` resolves from the
+active (test) config, and `backup_database()` is a safe no-op — no file
+created, no directory touched — when the active DB has no on-disk file
+(the `:memory:` case). Confirmed manually too: `ls backups/` before/after
+the full test run showed zero new files (Round 1's fix reproduced the bug
+by creating `app_20260830_093850_auto.db`; this round's fix prevents a
+repeat).
+
+**Verified**: `pytest` — 13/13 pass (~1.2s). Real app backup path
+double-checked via `create_app()` + `db_path()` printing the correct real
+`app.db` path.
