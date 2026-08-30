@@ -324,3 +324,34 @@ correcting; this was a bug nobody had hit yet, not one already skewing the
 real household's reports.
 
 **Verified**: `pytest` — 51/51 pass (~15s).
+
+---
+
+## Round 8 — 2026-08-30
+
+**Checked for the same bug shape elsewhere first** (per the process note):
+grepped every `*/forms.py` for `def validate_<field>` methods — only two
+exist in the whole codebase. `validate_report_group` (Round 7, now fixed).
+The other, `AccountForm.validate_new_password` (added earlier this
+session), uses `Length(min=0, max=128)` on the field, not `Optional()` —
+`Length` never raises `StopValidation`, only `ValidationError` on an
+out-of-range value, and `min=0` never fails for an empty string, so the
+chain always reaches the custom validator. Confirmed directly rather than
+just reading the code: called `AccountForm.validate()` with an empty
+`new_password` (no error raised, correct — empty means "don't change it")
+and with a 5-character one (correctly rejected with the "8자 이상" message).
+No second instance of Round 7's bug exists.
+
+**Added tests** (`tests/test_couple_routes.py`, 8 tests —
+`app/couple/routes.py` had zero coverage before this round): creating a
+household seeds all 8 default categories; a blank household name falls
+back to "우리집"; joining with an invalid invite code is rejected and
+leaves the user without a couple; joining with a valid code links the
+user and updates `couple_id`; joining a couple that already has 2 members
+is rejected (server-side, not just hidden in the UI); the monthly-expense
+setting rejects a negative value, correctly clears on a blank submission,
+and accepts a comma-formatted amount (e.g. `2,500,000`). No bug found
+here — all 8 passed on the first run against the existing code; this
+round is pure coverage, following Round 6's pattern rather than Round 7's.
+
+**Verified**: `pytest` — 59/59 pass (~20s).
