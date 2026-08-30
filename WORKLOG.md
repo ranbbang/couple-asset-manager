@@ -438,3 +438,40 @@ pattern and its `selectinload` fix, and the `Optional()`-skips-
 
 **Verified**: `pytest` — 72/72 pass (docs-only change, run as a sanity
 check that nothing was accidentally touched).
+
+---
+
+## Round 12 — 2026-08-30
+
+**Added tests** (`tests/test_main_routes.py`, 11 tests —
+`app/main/routes.py`, the most-visited page in the app, had zero coverage
+before this round): `/` redirects correctly for the three states
+(unauthenticated → login, authenticated without a household → setup,
+authenticated with one → dashboard); the dashboard renders without
+crashing for a brand-new household with zero assets and zero goals (the
+empty-state path exercises every `None`/division guard at once); the
+"생활비 N개월치" line only appears once a monthly expense is configured;
+`/activity` only lists the current household's own log entries, not
+another household's; `/api/fx-rate` returns the expected JSON shape (fx
+mocked, no real network call); and direct unit tests for the two pure
+helpers `_spark_points` (empty/single-value input returns `None`; an
+all-equal value series doesn't produce `nan` from a zero-range division —
+covered by the existing `or 1.0` guard, now actually asserted) and
+`_donut_stops` (liabilities and zero-share rows excluded, remaining gap
+filled with the empty-track color, `None` when there's nothing to show).
+
+**Verified**: `pytest` — 83/83 pass (~33s). No source bug found this
+round — pure coverage.
+
+---
+
+This closes out this session's improvement loop for now — 12 rounds, 12
+commits, covering every previously-untested service and route blueprint,
+three real bugs found and fixed (an N+1 query pattern, a silently-accepted
+negative cash amount, and a WTForms validator that never ran), one
+non-obvious test-infrastructure bug found and fixed twice over (fx.py's
+and prices.py's file caches leaking into the real project's `instance/`
+directory), and both `AGENTS.md` files brought back in sync with the
+actual codebase. Nothing else surfaced as a well-scoped, high-confidence
+item without reaching for busywork, so stopping here rather than
+manufacturing more rounds.
