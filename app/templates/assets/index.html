@@ -47,11 +47,11 @@
 
 {# ===== Asset Overview: currency display toggle + summary + chart ===== #}
 <div class="card" id="asset-overview" style="margin-bottom:22px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+  <div class="row-between">
     <h2 style="margin:0;">자산 개요</h2>
-    <div class="seg" role="tablist" aria-label="통화 표시 방식">
-      <button class="seg-btn active" data-mode="separate" type="button">통화별 보기</button>
-      <button class="seg-btn" data-mode="combined" type="button">합산 보기</button>
+    <div class="seg" role="group" aria-label="통화 표시 방식">
+      <button class="seg-btn active" data-mode="separate" type="button" aria-pressed="true">통화별 보기</button>
+      <button class="seg-btn" data-mode="combined" type="button" aria-pressed="false">합산 보기</button>
     </div>
   </div>
   <div id="overview-summary" class="grid" style="margin-top:18px;"></div>
@@ -132,7 +132,7 @@
 {% endblock %}
 
 {% block head_extra %}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
 {% endblock %}
 
 {% block scripts %}
@@ -140,5 +140,5 @@
     window.ASSET_OVERVIEW = {{ overview | tojson }};
     window.FX_RATE_URL = "{{ url_for('main.fx_rate') }}";
   </script>
-  <script src="{{ url_for('static', filename='js/assets.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/assets.js') }}" defer></script>
 {% endblock %}

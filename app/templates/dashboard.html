@@ -116,7 +116,7 @@
   <div style="display:flex; flex-direction:column; gap:18px;">
     {# ---- goals preview ---- #}
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="row-between">
         <h2 style="margin:0;">공동 목표 🎯</h2>
         <a href="{{ url_for('goals.index') }}" class="pill">전체 보기</a>
       </div>
@@ -133,7 +133,7 @@
               </span>
               <span class="pct">{{ v.pct if v else 0 }}%</span>
             </div>
-            <div class="progress"><span style="width:{{ v.pct if v else 0 }}%;"></span></div>
+            <div class="progress"><span style="transform:scaleX({{ ((v.pct if v else 0) / 100) | round(4) }});"></span></div>
             <div class="goal-meta">
               <span><b>{{ (v.current if v else 0) | won }}</b> / {{ goal.target_amount | won }}</span>
               {% if v and v.eta %}<span class="eta">📅 {{ v.eta.strftime('%Y년 %m월') }} 달성 예상</span>{% endif %}
@@ -151,7 +151,7 @@
 
     {# ---- recent activity (3건 + 더 보기) ---- #}
     <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div class="row-between">
         <h2 style="margin:0;">최근 활동 📜</h2>
         <a href="{{ url_for('main.activity') }}" class="pill">더 보기</a>
       </div>

@@ -10,6 +10,14 @@
     Chart.defaults.color = "#A49C90";
     Chart.defaults.borderColor = "rgba(255,255,255,0.05)";
     Chart.defaults.font.family = "'Switzer','Pretendard',sans-serif";
+  } else {
+    // Chart.js failed to load (offline, blocked CDN, ad blocker) — every
+    // chart function below no-ops once its canvas is gone, so this alone
+    // is enough to keep the page honest instead of showing blank cards.
+    document.querySelectorAll(".chart-wrap").forEach((el) => {
+      el.innerHTML = '<p class="rate-note" style="padding:20px 0;">' +
+        "📡 차트를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.</p>";
+    });
   }
 
   let cur = "KRW";
@@ -186,7 +194,11 @@
     document.querySelectorAll(`.seg-btn[data-${attr}]`).forEach((btn) => {
       btn.addEventListener("click", () => {
         apply(btn.dataset[attr]);
-        btn.parentElement.querySelectorAll(".seg-btn").forEach((b) => b.classList.toggle("active", b === btn));
+        btn.parentElement.querySelectorAll(".seg-btn").forEach((b) => {
+          const on = b === btn;
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-pressed", on ? "true" : "false");
+        });
         render();
       });
     });

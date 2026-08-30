@@ -28,7 +28,7 @@
           </h2>
           <span class="pct">{{ v.pct if v else 0 }}%</span>
         </div>
-        <div class="progress"><span style="width:{{ v.pct if v else 0 }}%;"></span></div>
+        <div class="progress"><span style="transform:scaleX({{ ((v.pct if v else 0) / 100) | round(4) }});"></span></div>
         <div class="goal-meta">
           <span>현재 <b>{{ (v.current if v else 0) | won }}</b></span>
           <span>목표 <b>{{ goal.target_amount | won }}</b></span>

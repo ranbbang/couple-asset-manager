@@ -59,7 +59,11 @@
   }
 
   function pieCard(id, title) {
-    return `<div class="card"><h3 style="margin-bottom:6px;">${title}</h3><div class="chart-wrap sm"><canvas id="${id}"></canvas></div></div>`;
+    if (!window.Chart) {
+      return `<div class="card"><h3 style="margin-bottom:6px;">${title}</h3>
+        <p class="rate-note">📡 차트를 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 새로고침해 주세요.</p></div>`;
+    }
+    return `<div class="card"><h3 style="margin-bottom:6px;">${title}</h3><div class="chart-wrap sm"><canvas id="${id}" role="img" aria-label="${title} 도넛 차트"></canvas></div></div>`;
   }
 
   function drawPie(id, labels, values, colors) {
@@ -123,10 +127,16 @@
     btn.addEventListener("click", () => {
       mode = btn.dataset.mode;
       localStorage.setItem("assetOverviewMode", mode);
-      $btns.forEach((b) => b.classList.toggle("active", b === btn));
+      $btns.forEach((b) => {
+        const on = b === btn;
+        b.classList.toggle("active", on);
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+      });
       render();
     });
-    btn.classList.toggle("active", btn.dataset.mode === mode);
+    const on = btn.dataset.mode === mode;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
   });
 
   render();

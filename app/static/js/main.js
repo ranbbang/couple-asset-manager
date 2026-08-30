@@ -63,6 +63,14 @@ function setupReveal() {
         const el = entry.target;
         const delay = parseInt(el.dataset.revealDelay || "0", 10);
         el.style.transitionDelay = `${delay}ms`;
+        // Promote to a compositor layer only for the transition's own
+        // window, then drop the hint — see the CSS comment on [data-reveal].
+        el.style.willChange = "opacity, transform";
+        el.addEventListener(
+          "transitionend",
+          () => { el.style.willChange = ""; el.style.transitionDelay = ""; },
+          { once: true }
+        );
         el.classList.add("in");
         // fire count-ups once the card is on screen
         el.querySelectorAll("[data-countup]").forEach(animateCountup);
@@ -141,6 +149,27 @@ function setupCommaInputs() {
   });
 }
 
+// --- prevent double-submission ---------------------------------------------
+// Disables the submitting button once a form actually commits, so a slow
+// network round-trip (or an impatient double-click) can't fire the same
+// POST twice (duplicate snapshots, duplicate price-refresh calls, etc).
+// Full-page navigation resets the disabled state naturally on the next load.
+// Opt out per-form with data-no-guard (none currently need it).
+function setupSubmitGuard() {
+  document.addEventListener("submit", (e) => {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement) || form.dataset.noGuard) return;
+    // Defer to the next tick: an onsubmit="return confirm(...)" handler
+    // (e.g. delete forms) runs first and may cancel the submit outright —
+    // by then e.defaultPrevented reflects the real outcome either way.
+    setTimeout(() => {
+      if (e.defaultPrevented) return;
+      const btn = form.querySelector('button[type="submit"]:not(:disabled), input[type="submit"]:not(:disabled)');
+      if (btn) btn.disabled = true;
+    }, 0);
+  });
+}
+
 // --- PWA service worker ----------------------------------------------------
 // Registration only succeeds on secure contexts (HTTPS or localhost); on
 // plain LAN HTTP the call silently no-ops, which is fine.
@@ -171,6 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
   tagReveals();
   setupReveal();
   setupCommaInputs();
+  setupSubmitGuard();
   registerServiceWorker();
 
   // Count-ups not inside a reveal target (e.g. above the fold) run immediately.

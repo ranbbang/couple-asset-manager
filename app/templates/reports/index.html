@@ -38,7 +38,7 @@
 
 {# ===== Target allocation vs current (rebalancing) ===== #}
 <div class="card" style="margin-bottom:18px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+  <div class="row-between" style="gap:10px;">
     <h2 style="margin:0;">목표 자산배분 🎛️</h2>
     <span class="rate-note">그룹별 목표 비중(%)을 정하면 현재 비중과의 차이를 보여줍니다 (±5%p 이상이면 리밸런싱 신호)</span>
   </div>
@@ -74,19 +74,21 @@
   </div>
 {% else %}
   {# ---- controls: currency + period ---- #}
-  <div class="card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px;">
+  <div class="card row-between" style="margin-bottom:18px;">
     <div class="rate-note" id="report-rate">표시 통화를 선택하세요.</div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
-      <div class="seg" aria-label="표시 통화">
-        <button class="seg-btn active" data-cur="KRW" type="button">₩ 원</button>
-        <button class="seg-btn" data-cur="USD" type="button">$ 달러</button>
+      <div class="seg" role="group" aria-label="표시 통화">
+        <button class="seg-btn active" data-cur="KRW" type="button" aria-pressed="true">₩ 원</button>
+        <button class="seg-btn" data-cur="USD" type="button" aria-pressed="false">$ 달러</button>
       </div>
-      <div class="seg" aria-label="기간">
-        <button class="seg-btn active" data-period="month" type="button">월별</button>
-        <button class="seg-btn" data-period="year" type="button">연도별</button>
+      <div class="seg" role="group" aria-label="기간">
+        <button class="seg-btn active" data-period="month" type="button" aria-pressed="true">월별</button>
+        <button class="seg-btn" data-period="year" type="button" aria-pressed="false">연도별</button>
       </div>
     </div>
   </div>
+
+  <span id="chart-data-note" class="sr-only">전체 수치는 이 페이지 상단의 CSV 내보내기에서 확인할 수 있습니다.</span>
 
   {# ---- net worth trend (full width, incl. 부동산 제외) ---- #}
   <div class="card" style="margin-bottom:18px;">
@@ -95,12 +97,13 @@
       <span><i style="background:#9DBE8A;"></i> 순자산</span>
       <span><i style="background:#C8B66E;"></i> 부동산 제외 순자산</span>
     </div>
-    <div class="chart-wrap"><canvas id="chart-networth"></canvas></div>
+    <div class="chart-wrap"><canvas id="chart-networth" role="img"
+      aria-label="순자산 및 부동산 제외 순자산 추이 라인 차트" aria-describedby="chart-data-note"></canvas></div>
   </div>
 
   {# ===== selectable ratio bar (req: Sector Allocation 스타일) ===== #}
   <div class="card" style="margin-bottom:18px;" id="ratio-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+    <div class="row-between" style="gap:10px;">
       <h2 style="margin:0;">자산 비율 분석 <span class="rate-note">항목을 넣고 빼며 비율 확인</span></h2>
     </div>
     <div id="ratio-picker" class="ratio-picker"></div>
@@ -114,34 +117,40 @@
   <div class="grid cols-2">
     <div class="card">
       <h2>총자산 성장 (Asset Growth)</h2>
-      <div class="chart-wrap"><canvas id="chart-growth"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-growth" role="img"
+        aria-label="총자산 성장 막대 그래프" aria-describedby="chart-data-note"></canvas></div>
     </div>
     <div class="card">
       <h2>자산 배분 (Allocation)</h2>
-      <div class="chart-wrap"><canvas id="chart-allocation"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-allocation" role="img"
+        aria-label="카테고리별 자산 배분 도넛 차트" aria-describedby="chart-data-note"></canvas></div>
     </div>
     <div class="card">
       <h2>투자 자산 추이 (Investments)</h2>
-      <div class="chart-wrap"><canvas id="chart-investment"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-investment" role="img"
+        aria-label="투자 자산 추이 라인 차트" aria-describedby="chart-data-note"></canvas></div>
     </div>
     <div class="card">
       <h2>현금성 자산 추이 (Cash)</h2>
-      <div class="chart-wrap"><canvas id="chart-cash"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-cash" role="img"
+        aria-label="현금성 자산 추이 라인 차트" aria-describedby="chart-data-note"></canvas></div>
     </div>
     <div class="card">
       <h2>노후·안전 자산 추이 (Retirement & Safe)</h2>
-      <div class="chart-wrap"><canvas id="chart-safe"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-safe" role="img"
+        aria-label="노후·안전 자산 추이 라인 차트" aria-describedby="chart-data-note"></canvas></div>
     </div>
     <div class="card">
       <h2>현금성 투자자산 대비 투자(중·고위험) 비중</h2>
-      <div class="chart-wrap"><canvas id="chart-invcash"></canvas></div>
+      <div class="chart-wrap"><canvas id="chart-invcash" role="img"
+        aria-label="현금성 투자자산 대비 투자 중·고위험 비중 도넛 차트" aria-describedby="chart-data-note"></canvas></div>
     </div>
   </div>
 {% endif %}
 {% endblock %}
 
 {% block head_extra %}
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" defer></script>
 {% endblock %}
 
 {% block scripts %}
@@ -150,5 +159,5 @@
     window.CACHED_RATE = {{ cached_rate | tojson }};
     window.FX_RATE_URL = "{{ url_for('main.fx_rate') }}";
   </script>
-  <script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/reports.js') }}" defer></script>
 {% endblock %}
