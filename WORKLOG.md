@@ -279,3 +279,48 @@ without asking; flagging it here for whoever adds non-KRW/USD support.
 **Verified**: `pytest` — 43/43 pass (~10s). Confirmed both
 `instance/price_cache.json` and `instance/fx_cache.json` byte-identical
 before/after this round's test run.
+
+---
+
+## Round 7 — 2026-08-30
+
+**Found a real, currently-live bug** while writing `tests/test_categories_routes.py`
+(no coverage before this round): `CategoryForm.report_group`'s intended
+rule — "an asset (non-liability) category must have a report group" —
+never actually ran. The field had `validators=[Optional()]`, and
+`Optional()` raises `StopValidation` on empty input, which skips every
+later validator for that field **including** the form's own
+`validate_report_group()` method (WTForms treats `validate_<field>` as
+just another validator appended to that field's chain). Confirmed with a
+minimal WTForms repro outside the app before touching anything: with
+`Optional()` present, the custom validator's own print statement never
+ran; with it removed, it ran every time. Real consequence: a category
+could be saved as an asset category with `report_group = None`, silently
+excluding every account in it from all report-group aggregation
+(`services/snapshots.py::_compute()`'s `group_totals` only adds a category
+`if cat.report_group in group_totals`) — the category's money would still
+count in total assets but vanish from every report chart and from the
+target-allocation feature, with no error anywhere.
+
+**Changed**: `app/categories/forms.py` — removed `Optional()` from
+`report_group`'s validators (kept the field itself un-required at the
+WTForms level; `validate_report_group()` already correctly allows an empty
+value for liability categories and rejects it otherwise).
+
+**Verified the fix both ways**: minimal WTForms-only repro before touching
+app code (validator visibly skipped with `Optional()`, ran without it);
+then `tests/test_categories_routes.py` (8 tests: duplicate-name rejection,
+the report-group requirement itself, liability categories correctly
+exempted, cross-household 404 on edit, delete blocked as last category,
+delete blocked with assets and no reassign target, delete+reassign
+succeeds, move swaps sort_order) — reverted just the forms.py fix and
+reran the report-group test alone: failed exactly as expected (category
+saved anyway, no error shown). Restored the fix.
+
+**Checked for existing damage**: queried every `Category` row in the real
+`app.db` (both the demo household and the real Couple 2) for an asset
+category with no report group — none found, so no existing data needs
+correcting; this was a bug nobody had hit yet, not one already skewing the
+real household's reports.
+
+**Verified**: `pytest` — 51/51 pass (~15s).
