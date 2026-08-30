@@ -1,0 +1,25 @@
+{% extends "shell.html" %}
+{% from "_formhelpers.html" import render_field %}
+{% block title %}계정 설정 · {{ APP_NAME }}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+  <div>
+    <span class="eyebrow">설정 · ACCOUNT</span>
+    <h1>계정 설정 ⚙️</h1>
+    <div class="sub">이름·이메일·비밀번호를 변경할 수 있습니다.</div>
+  </div>
+</div>
+
+<div class="card" style="max-width:480px;">
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {{ render_field(form.display_name, autofocus=true) }}
+    {{ render_field(form.email, type="email") }}
+    {{ render_field(form.current_password, placeholder="••••••••") }}
+    {{ render_field(form.new_password, placeholder="변경하지 않으려면 비워두세요") }}
+    {{ render_field(form.confirm_new_password, placeholder="••••••••") }}
+    {{ form.submit(class="btn btn-primary btn-block") }}
+  </form>
+</div>
+{% endblock %}

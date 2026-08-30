@@ -4,7 +4,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 
 from ..extensions import db
 from ..models import User
-from .forms import LoginForm, SignupForm
+from .forms import AccountForm, LoginForm, SignupForm
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -62,3 +62,31 @@ def logout():
     logout_user()
     flash("로그아웃되었습니다.", "info")
     return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/account", methods=["GET", "POST"])
+@login_required
+def account():
+    form = AccountForm(obj=current_user)
+    if form.validate_on_submit():
+        if not current_user.check_password(form.current_password.data):
+            flash("현재 비밀번호가 올바르지 않습니다.", "error")
+            return render_template("auth/account.html", form=form)
+
+        email = form.email.data.strip().lower()
+        if email != current_user.email:
+            if User.query.filter(User.email == email, User.id != current_user.id).first():
+                flash("이미 사용 중인 이메일입니다.", "error")
+                return render_template("auth/account.html", form=form)
+            current_user.email = email
+
+        current_user.display_name = form.display_name.data.strip()
+
+        if form.new_password.data:
+            current_user.set_password(form.new_password.data)
+
+        db.session.commit()
+        flash("계정 정보가 저장되었습니다.", "success")
+        return redirect(url_for("auth.account"))
+
+    return render_template("auth/account.html", form=form)
