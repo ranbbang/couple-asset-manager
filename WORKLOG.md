@@ -380,3 +380,28 @@ for human readability) and nothing depends on the omitted case.
 
 **Verified**: `pytest` — 65/65 pass (~24s). No source bug found this round
 — pure coverage, like Round 6 and Round 8.
+
+---
+
+## Round 10 — 2026-08-30
+
+**Added tests** (`tests/test_goals_routes.py`, 7 tests —
+`app/goals/routes.py` had route-level coverage of zero; `services/goals.py`
+itself was already unit-tested in Round 3, this is the routes wrapping it):
+creating a goal with a linked category persists the link and defaults to a
+joint owner; creating with a specific member as owner sets `owner_id`
+correctly; editing a goal preselects its existing linked category as a
+checked checkbox on GET, and clearing it in the POST actually clears
+`linked_category_ids`; editing or deleting another household's goal is a
+404 (not just hidden in the UI); deleting a goal removes it; and liability
+categories are never offered as linkable choices on the create form.
+
+**Two test assumptions were wrong, not the code** (both caught by actually
+running the test against the real template output rather than trusting my
+first guess): initially assumed the linked-category picker was a `<select>`
+with `value="X" selected` — it's actually a checkbox list
+(`<input type="checkbox" name="linked_categories" value="X" checked>`).
+Fixed the test to match the real markup with a small regex rather than a
+brittle exact-string match on whitespace.
+
+**Verified**: `pytest` — 72/72 pass (~30s). No source bug found this round.
