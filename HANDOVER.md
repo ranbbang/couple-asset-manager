@@ -7,6 +7,11 @@ could clone this and run it); this file is where the "who's actually in this
 pretty — meant to save the next session (human or agent) from re-deriving
 everything in this document from scratch.
 
+*Last verified against the running code and `app.db` on 2026-09-01 — no
+code changes since the previous update (`f95c3ba`); re-checked the account/
+data state below and refreshed the parts that drift just from normal app
+use (see the snapshot-count note).*
+
 ---
 
 ## 🔴 Sensitive-data handling — read this before touching accounts/import code
@@ -64,7 +69,7 @@ Two households coexist in the same database, deliberately kept apart:
 | Couple name | "지은♥민준네" (seed default) | "우리집" |
 | Invite code | `LOVE2026` (public, in `seed.py`) | *(a real, live join code — this repo is public, so it's intentionally not written here; check the DB directly: `Couple.query.get(2).invite_code`)* |
 | Users | `jieun@example.com`, `minjun@example.com` — demo, from `seed.py` | Partner A (`songbbang93@gmail.com` — real), Partner B (`yoon.ranyoung@example.com` — **placeholder, not her real email**) |
-| Data | Sample accounts (카카오뱅크, AAPL/005930.KS/BTC-USD, etc.) | Real accounts/holdings imported from a Google Sheet export (see `WORKLOG.md`'s intro and the conversation history for the mapping decisions), plus 4 months of historical `AssetSnapshot`s and a "2026년 목표 순자산" goal |
+| Data | Sample accounts (카카오뱅크, AAPL/005930.KS/BTC-USD, etc.) | Real accounts/holdings imported from a Google Sheet export (see `WORKLOG.md`'s intro and the conversation history for the mapping decisions), plus historical `AssetSnapshot`s (4 imported from the sheet, one earlier month; more accrue automatically every time `/dashboard` or `/reports` is opened in a new calendar month — don't hardcode a count here, check `AssetSnapshot.query.filter_by(couple_id=2).count()` if it matters) and a "2026년 목표 순자산" goal |
 | Passwords | `demo1234` for both (public, in `README.md`/`seed.py` on purpose) | Temporary, randomly generated at import time, given to the user in chat only (never written to a file — see above). **Unknown to this document.** |
 
 **Open action for the real household**: Partner B's email is still the
